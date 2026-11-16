@@ -12,3 +12,7 @@ Thumbs.db
 .vercel
 english-notebook/dist/
 english-notebook/server/public/
+
+english-notebook/littlelingo/
+english-notebook/english notebook/
+
