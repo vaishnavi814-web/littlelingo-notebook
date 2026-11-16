@@ -1,0 +1,14 @@
+node_modules/
+client/dist/
+server/public/
+release/
+server/.env
+server/data/
+server/uploads/
+data/
+*.log
+.DS_Store
+Thumbs.db
+.vercel
+english-notebook/dist/
+english-notebook/server/public/
