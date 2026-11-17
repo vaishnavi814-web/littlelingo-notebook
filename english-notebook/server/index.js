@@ -20,6 +20,16 @@ const imageExtensions = {
 const publicDir = path.join(__dirname, 'public')
 
 app.use(express.json({ limit: '1mb' }))
+
+// Allow cross-origin browser calls from the deployed frontend (e.g. Vercel).
+const allowedOrigin = process.env.ALLOWED_ORIGIN || '*'
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin)
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+  if (req.method === 'OPTIONS') return res.sendStatus(204)
+  next()
+})
 app.use('/uploads', express.static(uploadDir, { dotfiles: 'deny', index: false }))
 
 app.get('/api/health', (_req, res) => {
@@ -88,7 +98,10 @@ const started = init().then(() => new Promise((resolve, reject) => {
     resolve(actualPort)
   })
   server.on('error', reject)
-}))
+})).catch((error) => {
+  console.error(`English notebook API failed to start: ${error.message}`)
+  process.exit(1)
+})
 
 const stop = async () => {
   if (!server?.listening) return

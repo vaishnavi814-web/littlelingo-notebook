@@ -1,3 +1,7 @@
+// Hybrid storage:
+//  - talks to the Express API (/api/entries) when it is reachable (desktop served by the server, or any host via VITE_API_URL)
+//  - falls back to the browser's IndexedDB when it is not (offline desktop / preview builds)
+
 const DB_NAME = 'littlelingo-notebook'
 const DB_VERSION = 1
 const STORE = 'entries'
@@ -28,8 +32,7 @@ function withStore(mode, action) {
 }
 
 const nowIso = () => new Date().toISOString()
-
-export const storage = {
+const local = {
   async getAll() {
     return withStore('readonly', (store) => new Promise((resolve, reject) => {
       const req = store.getAll()
@@ -66,7 +69,7 @@ export const storage = {
   },
 
   async update(id, entry) {
-    const existing = await storage.getById(id)
+    const existing = await local.getById(id)
     if (!existing) return null
     const item = { ...existing, ...entry, _id: id, updatedAt: nowIso() }
     return withStore('readwrite', (store) => {
@@ -76,7 +79,7 @@ export const storage = {
   },
 
   async toggleFavorite(id, favorite) {
-    const existing = await storage.getById(id)
+    const existing = await local.getById(id)
     if (!existing) return null
     const item = { ...existing, favorite: !!favorite, updatedAt: nowIso() }
     return withStore('readwrite', (store) => {
@@ -86,7 +89,7 @@ export const storage = {
   },
 
   async softDelete(id) {
-    const existing = await storage.getById(id)
+    const existing = await local.getById(id)
     if (!existing || existing.deletedAt) return null
     const item = { ...existing, deletedAt: nowIso(), updatedAt: nowIso() }
     return withStore('readwrite', (store) => {
@@ -96,7 +99,7 @@ export const storage = {
   },
 
   async restore(id) {
-    const existing = await storage.getById(id)
+    const existing = await local.getById(id)
     if (!existing || !existing.deletedAt) return null
     const item = { ...existing, deletedAt: null, updatedAt: nowIso() }
     return withStore('readwrite', (store) => {
@@ -106,7 +109,7 @@ export const storage = {
   },
 
   async permanentDelete(id) {
-    const existing = await storage.getById(id)
+    const existing = await local.getById(id)
     if (!existing || !existing.deletedAt) return false
     return withStore('readwrite', (store) => {
       store.delete(id)
@@ -115,27 +118,26 @@ export const storage = {
   },
 
   async updateVocabularyItem(id, index, updates) {
-    const existing = await storage.getById(id)
+    const existing = await local.getById(id)
     if (!existing) return null
     const items = existing.vocabulary || []
     if (index < 0 || index >= items.length) return null
-    const next = { ...items[index], ...updates }
-    items[index] = next
-    return storage.update(id, { ...existing, vocabulary: items })
+    items[index] = { ...items[index], ...updates }
+    return local.update(id, { ...existing, vocabulary: items })
   },
 
   async deleteVocabularyItem(id, index) {
-    const existing = await storage.getById(id)
+    const existing = await local.getById(id)
     if (!existing) return null
     const items = existing.vocabulary || []
     if (index < 0 || index >= items.length) return null
     items.splice(index, 1)
-    const entry = await storage.update(id, { ...existing, vocabulary: items })
+    const entry = await local.update(id, { ...existing, vocabulary: items })
     return { entry, message: 'Vocabulary item deleted.' }
   },
 
   async recordReview(id, index, rating) {
-    const existing = await storage.getById(id)
+    const existing = await local.getById(id)
     if (!existing) return null
     const items = existing.vocabulary || []
     if (index < 0 || index >= items.length) return null
@@ -177,7 +179,7 @@ export const storage = {
       reviewDueAt: reviewDueAt.toISOString(),
       reviewedAt: now.toISOString(),
     }
-    return storage.update(id, { ...existing, vocabulary: items })
+    return local.update(id, { ...existing, vocabulary: items })
   },
 
   async uploadImage(file) {
@@ -189,3 +191,99 @@ export const storage = {
     })
   },
 }
+
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+const REMOTE_TIMEOUT_MS = 3000
+
+let remoteChecked = false
+let remoteAvailable = false
+
+const fetchWithTimeout = (url, options = {}) => {
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Request timed out')), REMOTE_TIMEOUT_MS)
+  })
+  return Promise.race([fetch(url, options), timeout]).finally(() => clearTimeout(timer))
+}
+
+const isRemoteAvailable = async () => {
+  if (remoteChecked) return remoteAvailable
+  remoteChecked = true
+  try {
+    const response = await fetchWithTimeout(`${API_BASE}/api/health`, { method: 'GET' })
+    remoteAvailable = Boolean(response.ok)
+  } catch {
+    remoteAvailable = false
+  }
+  return remoteAvailable
+}
+
+const apiFetch = async (path, { method = 'GET', json } = {}) => {
+  const options = { method, headers: {} }
+  if (json !== undefined) {
+    options.headers['Content-Type'] = 'application/json'
+    options.body = JSON.stringify(json)
+  }
+  const response = await fetchWithTimeout(`${API_BASE}${path}`, options)
+  if (!response.ok) {
+    let detail = response.statusText
+    try {
+      const body = await response.json()
+      if (body?.message) detail = body.message
+    } catch { /* ignore non-JSON error bodies */ }
+    throw new Error(`Request failed (${response.status}): ${detail}`)
+  }
+  return response.status === 204 ? null : response.json()
+}
+
+// Wrap a remote call with fallback to the local implementation.
+const remoteOrLocal = (localFn, remoteFn) => async (...args) => {
+  try {
+    if (!(await isRemoteAvailable())) return localFn(...args)
+    return await remoteFn(...args)
+  } catch (error) {
+    console.error('Online sync failed, falling back to offline storage:', error?.message)
+    return localFn(...args)
+  }
+}
+
+const mergingRemoteItem = async (id, index, updates) => {
+  const entry = await apiFetch(`/api/entries/${id}`)
+  const item = entry.vocabulary?.[index]
+  if (!item) throw new Error('Vocabulary item not found.')
+  return apiFetch(`/api/entries/${id}/vocabulary/${index}`, {
+    method: 'PUT',
+    json: { ...item, ...updates },
+  })
+}
+
+const storage = {
+  getAll: remoteOrLocal(local.getAll, () => apiFetch('/api/entries')),
+  getTrash: remoteOrLocal(local.getTrash, () => apiFetch('/api/entries/trash')),
+  getById: remoteOrLocal(local.getById, (id) => apiFetch(`/api/entries/${id}`)),
+  create: remoteOrLocal(local.create, (entry) => apiFetch('/api/entries', { method: 'POST', json: entry })),
+  update: remoteOrLocal(local.update, (id, entry) => apiFetch(`/api/entries/${id}`, { method: 'PUT', json: entry })),
+  toggleFavorite: remoteOrLocal(local.toggleFavorite, (id, favorite) => apiFetch(`/api/entries/${id}/favorite`, { method: 'PATCH', json: { favorite: Boolean(favorite) } })),
+  softDelete: remoteOrLocal(local.softDelete, async (id) => { const result = await apiFetch(`/api/entries/${id}`, { method: 'DELETE' }); return result?.entry ?? result }),
+  restore: remoteOrLocal(local.restore, (id) => apiFetch(`/api/entries/${id}/restore`, { method: 'PATCH' })),
+  permanentDelete: remoteOrLocal(local.permanentDelete, async (id) => { await apiFetch(`/api/entries/${id}/permanent`, { method: 'DELETE' }); return true }),
+  updateVocabularyItem: remoteOrLocal(local.updateVocabularyItem, mergingRemoteItem),
+  deleteVocabularyItem: remoteOrLocal(local.deleteVocabularyItem, async (id, index) => {
+    const entry = await apiFetch(`/api/entries/${id}/vocabulary/${index}`, { method: 'DELETE' })
+    return { entry, message: 'Vocabulary item deleted.' }
+  }),
+  recordReview: remoteOrLocal(local.recordReview, (id, index, rating) => apiFetch(`/api/entries/${id}/vocabulary/${index}/review`, { method: 'POST', json: { rating } })),
+  uploadImage: remoteOrLocal(local.uploadImage, async (file) => {
+    const form = new FormData()
+    form.append('image', file)
+    const response = await fetchWithTimeout(`${API_BASE}/api/uploads`, { method: 'POST', body: form })
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error(body?.message || 'Image upload failed.')
+    }
+    const result = await response.json()
+    return `${API_BASE}${result.url}`
+  }),
+}
+
+export { storage }

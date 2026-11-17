@@ -158,81 +158,81 @@ const parseVocabularyIndex = (value) => {
   return Number.isSafeInteger(index) ? index : null
 }
 
-router.get('/trash', (req, res, next) => {
+router.get('/trash', async (req, res, next) => {
   try {
-    res.json(getTrash())
+    res.json(await getTrash())
   } catch (error) { next(error) }
 })
 
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
-    res.json(getAll())
+    res.json(await getAll())
   } catch (error) { next(error) }
 })
 
-router.patch('/:id/favorite', (req, res, next) => {
+router.patch('/:id/favorite', async (req, res, next) => {
   if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid page ID.' })
   if (typeof req.body?.favorite !== 'boolean') return res.status(400).json({ message: 'Favorite must be true or false.' })
   try {
-    const entry = toggleFavorite(req.params.id, req.body.favorite)
+    const entry = await toggleFavorite(req.params.id, req.body.favorite)
     if (!entry) return res.status(404).json({ message: 'Page not found.' })
     res.json(entry)
   } catch (error) { next(error) }
 })
 
-router.patch('/:id/vocabulary/:index/favorite', (req, res, next) => {
+router.patch('/:id/vocabulary/:index/favorite', async (req, res, next) => {
   if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid page ID.' })
   const index = parseVocabularyIndex(req.params.index)
   if (index === null) return res.status(400).json({ message: 'Invalid vocabulary item index.' })
   if (typeof req.body?.favorite !== 'boolean') return res.status(400).json({ message: 'Favorite must be true or false.' })
   try {
-    const entry = updateVocabularyItem(req.params.id, index, { favorite: req.body.favorite })
+    const entry = await updateVocabularyItem(req.params.id, index, { favorite: req.body.favorite })
     if (!entry) return res.status(404).json({ message: 'Page not found.' })
     res.json(entry)
   } catch (error) { next(error) }
 })
 
-router.patch('/:id/restore', (req, res, next) => {
+router.patch('/:id/restore', async (req, res, next) => {
   if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid page ID.' })
   try {
-    const entry = restore(req.params.id)
+    const entry = await restore(req.params.id)
     if (!entry) return res.status(404).json({ message: 'Deleted page not found.' })
     res.json(entry)
   } catch (error) { next(error) }
 })
 
-router.delete('/:id/permanent', (req, res, next) => {
+router.delete('/:id/permanent', async (req, res, next) => {
   if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid page ID.' })
   try {
-    const ok = permanentDelete(req.params.id)
+    const ok = await permanentDelete(req.params.id)
     if (!ok) return res.status(404).json({ message: 'Deleted page not found.' })
     res.json({ message: 'Page permanently deleted.' })
   } catch (error) { next(error) }
 })
 
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
   const parsed = parseEntry(req.body)
   if (parsed.error) return res.status(400).json({ message: parsed.error })
   try {
-    const entry = create(parsed.value)
+    const entry = await create(parsed.value)
     res.status(201).json(entry)
   } catch (error) { next(error) }
 })
 
-router.put('/:id/vocabulary/:index', (req, res, next) => {
+router.put('/:id/vocabulary/:index', async (req, res, next) => {
   if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid page ID.' })
   const index = parseVocabularyIndex(req.params.index)
   if (index === null) return res.status(400).json({ message: 'Invalid vocabulary item index.' })
   const parsed = parseVocabularyItem(req.body)
   if (parsed.error) return res.status(400).json({ message: parsed.error })
   try {
-    const entry = updateVocabularyItem(req.params.id, index, parsed.value)
+    const entry = await updateVocabularyItem(req.params.id, index, parsed.value)
     if (!entry) return res.status(404).json({ message: 'Page not found.' })
     res.json(entry)
   } catch (error) { next(error) }
 })
 
-router.post('/:id/vocabulary/:index/review', (req, res, next) => {
+router.post('/:id/vocabulary/:index/review', async (req, res, next) => {
   if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid page ID.' })
   const index = parseVocabularyIndex(req.params.index)
   if (index === null) return res.status(400).json({ message: 'Invalid vocabulary item index.' })
@@ -241,47 +241,47 @@ router.post('/:id/vocabulary/:index/review', (req, res, next) => {
     return res.status(400).json({ message: 'Choose Again, Hard, or Remembered.' })
   }
   try {
-    const entry = recordReview(req.params.id, index, rating)
+    const entry = await recordReview(req.params.id, index, rating)
     if (!entry) return res.status(404).json({ message: 'Page not found.' })
     res.json(entry)
   } catch (error) { next(error) }
 })
 
-router.delete('/:id/vocabulary/:index', (req, res, next) => {
+router.delete('/:id/vocabulary/:index', async (req, res, next) => {
   if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid page ID.' })
   const index = parseVocabularyIndex(req.params.index)
   if (index === null) return res.status(400).json({ message: 'Invalid vocabulary item index.' })
   try {
-    const result = deleteVocabularyItem(req.params.id, index)
+    const result = await deleteVocabularyItem(req.params.id, index)
     if (!result) return res.status(404).json({ message: 'Page not found.' })
     res.json(result)
   } catch (error) { next(error) }
 })
 
-router.get('/:id', (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid page ID.' })
   try {
-    const entry = getById(req.params.id)
+    const entry = await getById(req.params.id)
     if (!entry || entry.deletedAt != null) return res.status(404).json({ message: 'Page not found.' })
     res.json(entry)
   } catch (error) { next(error) }
 })
 
-router.put('/:id', (req, res, next) => {
+router.put('/:id', async (req, res, next) => {
   if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid page ID.' })
   const parsed = parseEntry(req.body)
   if (parsed.error) return res.status(400).json({ message: parsed.error })
   try {
-    const entry = update(req.params.id, parsed.value)
+    const entry = await update(req.params.id, parsed.value)
     if (!entry) return res.status(404).json({ message: 'Page not found.' })
     res.json(entry)
   } catch (error) { next(error) }
 })
 
-router.delete('/:id', (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid page ID.' })
   try {
-    const entry = softDelete(req.params.id)
+    const entry = await softDelete(req.params.id)
     if (!entry) return res.status(404).json({ message: 'Page not found.' })
     res.json({ entry, message: 'Page moved to the recycle bin.' })
   } catch (error) { next(error) }

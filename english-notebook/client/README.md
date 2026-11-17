@@ -57,7 +57,8 @@ Text-to-lesson generation uses the configured local Ollama model and requires Ol
 - Add definitions and example sentences to vocabulary items
 - Save phonetics, part of speech, multiple examples, synonyms, antonyms, tags, difficulty, and learning goals; play pronunciations with your browser’s local speech engine or hear vocabulary in real-world YouGlish video examples
 - Favorite notebook pages and vocabulary, then filter your collections by tag or difficulty
-- Review saved vocabulary as flashcards or sentence-completion quizzes using saved example sentences and vocabulary as answer choices; rate each answer Again, Hard, or Remembered to schedule the next review in local MongoDB
+- Synchronize your notebook with an optional Express API backed by **MongoDB Atlas** (when `MONGO_URI` is set, for example in Render) or the built-in local SQLite database; set `VITE_API_URL` to point the deployed web app at it. The notebook still works fully offline without the API.
+- Review saved vocabulary as flashcards or sentence-completion quizzes using saved example sentences and vocabulary as answer choices; rate each answer Again, Hard, or Remembered to schedule the next review in local storage
 - Study original grammar lessons from beginner to proficiency, with topic search, level filters, examples, common-mistake notes, quick checks, and browser-local completion tracking; lessons link to British Council, Cambridge Dictionary Grammar, or Purdue OWL for further reading
 - Add your own grammar lessons with a heading, date, level, notes, examples, common-mistake reminders, and an optional multiple-choice quick check; edit or delete them anytime from the “My lessons” filter
 - Turn a plain-text `.txt` or SubRip `.srt` file into a locally generated English lesson with vocabulary, examples, and a quiz; subtitle timestamps are removed, the source can be reviewed before generation, and generated lessons stay in this browser

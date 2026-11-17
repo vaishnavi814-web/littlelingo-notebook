@@ -1,5 +1,6 @@
-# Render Blueprint for the littlelingo backend (optional).
+# Render Blueprint for the littlelingo backend.
 # The web app itself is deployed to Vercel from english-notebook/client.
+# Data lives in MongoDB Atlas, so no disk is required.
 services:
   - type: web
     name: littlelingo-api
@@ -8,18 +9,21 @@ services:
     buildCommand: npm install
     startCommand: npm start
     plan: free
-    disk:
-      name: littlelingo-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: HOST
         value: 0.0.0.0
-      - key: DATA_DIR
-        value: /var/data
+      # Atlas connection string. Set this in the Render dashboard (Environment).
+      - key: MONGO_URI
+        sync: false
+      # Fail loudly if Atlas is unreachable instead of falling back to ephemeral SQLite.
+      - key: REQUIRE_MONGO
+        value: "true"
       - key: OLLAMA_MODEL
         value: llama3.2:3b
       # Point this at an Ollama instance reachable from Render.
       # 127.0.0.1 will NOT work here — there is no Ollama inside the container.
       - key: OLLAMA_URL
         sync: false
+      # Frontend origin allowed to call this API (any origin is allowed by default).
+      - key: ALLOWED_ORIGIN
+        value: https://littlelingo-alpha.vercel.app
