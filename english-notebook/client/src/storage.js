@@ -192,11 +192,17 @@ const local = {
   },
 }
 
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
-const REMOTE_TIMEOUT_MS = 3000
+// API resolution order:
+//   1. VITE_API_URL (if set in .env)
+//   2. same-origin (used when the UI is served by the Express server, e.g. Electron/local dev)
+//   3. the production Render service (fallback for static hosts like Vercel)
+const ENV_API = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
+const PRODUCTION_API = 'https://littlelingo-5lfy.onrender.com'
+const API_CANDIDATES = [...new Set([ENV_API, '', PRODUCTION_API])]
+const REMOTE_TIMEOUT_MS = 2500
+const REMOTE_PROBE_TTL_MS = 60 * 1000 // re-probe after 60s so cold starts recover
 
-let remoteChecked = false
-let remoteAvailable = false
+let remoteState = { available: false, checkedAt: 0, base: '' }
 
 const fetchWithTimeout = (url, options = {}) => {
   let timer
@@ -206,25 +212,42 @@ const fetchWithTimeout = (url, options = {}) => {
   return Promise.race([fetch(url, options), timeout]).finally(() => clearTimeout(timer))
 }
 
-const isRemoteAvailable = async () => {
-  if (remoteChecked) return remoteAvailable
-  remoteChecked = true
-  try {
-    const response = await fetchWithTimeout(`${API_BASE}/api/health`, { method: 'GET' })
-    remoteAvailable = Boolean(response.ok)
-  } catch {
-    remoteAvailable = false
+const getRemoteBase = async () => {
+  const now = Date.now()
+  if (now - remoteState.checkedAt < REMOTE_PROBE_TTL_MS) {
+    return remoteState.available ? remoteState.base : null
   }
-  return remoteAvailable
+  for (const base of API_CANDIDATES) {
+    if (await probeApi(base)) {
+      remoteState = { available: true, checkedAt: now, base }
+      return base
+    }
+  }
+  remoteState = { available: false, checkedAt: now, base: '' }
+  return null
+}
+
+const probeApi = async (base) => {
+  try {
+    const response = await fetchWithTimeout(`${base}/api/health`, { method: 'GET', cache: 'no-store' })
+    const body = await response.json().catch(() => null)
+    // On static hosts (Vercel), /api/health is rewritten to index.html with status 200.
+    // Only trust it when the API returns the JSON shape we built.
+    return Boolean(response.ok && body && body.status === 'ok')
+  } catch {
+    return false
+  }
 }
 
 const apiFetch = async (path, { method = 'GET', json } = {}) => {
+  const base = await getRemoteBase()
+  if (!base) throw new Error('API unavailable')
   const options = { method, headers: {} }
   if (json !== undefined) {
     options.headers['Content-Type'] = 'application/json'
     options.body = JSON.stringify(json)
   }
-  const response = await fetchWithTimeout(`${API_BASE}${path}`, options)
+  const response = await fetchWithTimeout(`${base}${path}`, options)
   if (!response.ok) {
     let detail = response.statusText
     try {
@@ -239,15 +262,16 @@ const apiFetch = async (path, { method = 'GET', json } = {}) => {
 // Wrap a remote call with fallback to the local implementation.
 const remoteOrLocal = (localFn, remoteFn) => async (...args) => {
   try {
-    if (!(await isRemoteAvailable())) return localFn(...args)
-    return await remoteFn(...args)
+    const base = await getRemoteBase()
+    if (base === null) return localFn(...args)
+    return await remoteFn(base, ...args)
   } catch (error) {
-    console.error('Online sync failed, falling back to offline storage:', error?.message)
+    console.warn('Online notebook unavailable — using offline storage.', error?.message)
     return localFn(...args)
   }
 }
 
-const mergingRemoteItem = async (id, index, updates) => {
+const mergingRemoteItem = async (_base, id, index, updates) => {
   const entry = await apiFetch(`/api/entries/${id}`)
   const item = entry.vocabulary?.[index]
   if (!item) throw new Error('Vocabulary item not found.')
@@ -258,31 +282,31 @@ const mergingRemoteItem = async (id, index, updates) => {
 }
 
 const storage = {
-  getAll: remoteOrLocal(local.getAll, () => apiFetch('/api/entries')),
-  getTrash: remoteOrLocal(local.getTrash, () => apiFetch('/api/entries/trash')),
-  getById: remoteOrLocal(local.getById, (id) => apiFetch(`/api/entries/${id}`)),
-  create: remoteOrLocal(local.create, (entry) => apiFetch('/api/entries', { method: 'POST', json: entry })),
-  update: remoteOrLocal(local.update, (id, entry) => apiFetch(`/api/entries/${id}`, { method: 'PUT', json: entry })),
-  toggleFavorite: remoteOrLocal(local.toggleFavorite, (id, favorite) => apiFetch(`/api/entries/${id}/favorite`, { method: 'PATCH', json: { favorite: Boolean(favorite) } })),
-  softDelete: remoteOrLocal(local.softDelete, async (id) => { const result = await apiFetch(`/api/entries/${id}`, { method: 'DELETE' }); return result?.entry ?? result }),
-  restore: remoteOrLocal(local.restore, (id) => apiFetch(`/api/entries/${id}/restore`, { method: 'PATCH' })),
-  permanentDelete: remoteOrLocal(local.permanentDelete, async (id) => { await apiFetch(`/api/entries/${id}/permanent`, { method: 'DELETE' }); return true }),
+  getAll: remoteOrLocal(local.getAll, (_base) => apiFetch('/api/entries')),
+  getTrash: remoteOrLocal(local.getTrash, (_base) => apiFetch('/api/entries/trash')),
+  getById: remoteOrLocal(local.getById, (_base, id) => apiFetch(`/api/entries/${id}`)),
+  create: remoteOrLocal(local.create, (_base, entry) => apiFetch('/api/entries', { method: 'POST', json: entry })),
+  update: remoteOrLocal(local.update, (_base, id, entry) => apiFetch(`/api/entries/${id}`, { method: 'PUT', json: entry })),
+  toggleFavorite: remoteOrLocal(local.toggleFavorite, (_base, id, favorite) => apiFetch(`/api/entries/${id}/favorite`, { method: 'PATCH', json: { favorite: Boolean(favorite) } })),
+  softDelete: remoteOrLocal(local.softDelete, async (_base, id) => { const result = await apiFetch(`/api/entries/${id}`, { method: 'DELETE' }); return result?.entry ?? result }),
+  restore: remoteOrLocal(local.restore, (_base, id) => apiFetch(`/api/entries/${id}/restore`, { method: 'PATCH' })),
+  permanentDelete: remoteOrLocal(local.permanentDelete, async (_base, id) => { await apiFetch(`/api/entries/${id}/permanent`, { method: 'DELETE' }); return true }),
   updateVocabularyItem: remoteOrLocal(local.updateVocabularyItem, mergingRemoteItem),
-  deleteVocabularyItem: remoteOrLocal(local.deleteVocabularyItem, async (id, index) => {
+  deleteVocabularyItem: remoteOrLocal(local.deleteVocabularyItem, async (_base, id, index) => {
     const entry = await apiFetch(`/api/entries/${id}/vocabulary/${index}`, { method: 'DELETE' })
     return { entry, message: 'Vocabulary item deleted.' }
   }),
-  recordReview: remoteOrLocal(local.recordReview, (id, index, rating) => apiFetch(`/api/entries/${id}/vocabulary/${index}/review`, { method: 'POST', json: { rating } })),
-  uploadImage: remoteOrLocal(local.uploadImage, async (file) => {
+  recordReview: remoteOrLocal(local.recordReview, (_base, id, index, rating) => apiFetch(`/api/entries/${id}/vocabulary/${index}/review`, { method: 'POST', json: { rating } })),
+  uploadImage: remoteOrLocal(local.uploadImage, async (base, file) => {
     const form = new FormData()
     form.append('image', file)
-    const response = await fetchWithTimeout(`${API_BASE}/api/uploads`, { method: 'POST', body: form })
+    const response = await fetchWithTimeout(`${base}/api/uploads`, { method: 'POST', body: form })
     if (!response.ok) {
       const body = await response.json().catch(() => ({}))
       throw new Error(body?.message || 'Image upload failed.')
     }
     const result = await response.json()
-    return `${API_BASE}${result.url}`
+    return `${base}${result.url}`
   }),
 }
 
