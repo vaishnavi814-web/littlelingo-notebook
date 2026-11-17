@@ -1,14 +1,18 @@
-# Render Blueprint for the littlelingo backend.
-# The web app itself is deployed to Vercel from english-notebook/client.
-# Data lives in MongoDB Atlas, so no disk is required.
+# Render Blueprint for the littlelingo app + backend.
+# One service serves both the React UI (copied from english-notebook/client/dist)
+# and the Express API. Data lives in MongoDB Atlas, so no disk is required.
 services:
   - type: web
     name: littlelingo-api
     runtime: node
-    rootDir: english-notebook/server
-    buildCommand: npm install
-    startCommand: npm start
     plan: free
+    buildCommand: |
+      npm --prefix english-notebook/client ci
+      npm --prefix english-notebook/client run build
+      npm --prefix english-notebook/server ci
+      mkdir -p english-notebook/server/public
+      cp -r english-notebook/client/dist/. english-notebook/server/public/
+    startCommand: node english-notebook/server/index.js
     envVars:
       - key: HOST
         value: 0.0.0.0
@@ -24,6 +28,6 @@ services:
       # 127.0.0.1 will NOT work here — there is no Ollama inside the container.
       - key: OLLAMA_URL
         sync: false
-      # Frontend origin allowed to call this API (any origin is allowed by default).
+      # Frontend origin allowed to call this API (the Vercel site).
       - key: ALLOWED_ORIGIN
         value: https://littlelingo-alpha.vercel.app
