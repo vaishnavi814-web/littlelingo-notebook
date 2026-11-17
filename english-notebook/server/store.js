@@ -33,6 +33,9 @@ const sqliteStore = require('./store-sqlite')
 
 let active = null
 const init = async () => {
+  if (process.env.VERCEL && !process.env.MONGO_URI) {
+    throw new Error('MONGO_URI is not set on Vercel. Add it in Project Settings -> Environment Variables, then redeploy.')
+  }
   if (process.env.MONGO_URI) {
     try {
       await mongoStore.init()
@@ -40,7 +43,7 @@ const init = async () => {
       console.log('MongoDB connected (Atlas).')
       return
     } catch (error) {
-      if (process.env.REQUIRE_MONGO === 'true') {
+      if (process.env.REQUIRE_MONGO === 'true' || process.env.VERCEL) {
         throw new Error(`MongoDB connection failed: ${error.message}`)
       }
       console.error(`MongoDB unavailable (${error.message}). Falling back to local SQLite storage.`)

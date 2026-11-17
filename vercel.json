@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm --prefix english-notebook/client ci",
+  "installCommand": "npm --prefix english-notebook/client ci && npm --prefix english-notebook/server ci",
   "buildCommand": "npm --prefix english-notebook/client run build",
   "outputDirectory": "english-notebook/client/dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
