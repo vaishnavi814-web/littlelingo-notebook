@@ -193,13 +193,17 @@ const local = {
 }
 
 // API resolution order:
-//   1. VITE_API_URL (if set in .env)
+//   1. VITE_API_URL (if set in .env) — prefer this: set it in Vercel so the
+//      frontend follows whatever hostname the Render service actually gets.
 //   2. same-origin (used when the UI is served by the Express server, e.g. Electron/local dev)
-//   3. the production Render service (fallback for static hosts like Vercel)
+//   3. the production Render service (fallback for static hosts like Vercel).
+//      Must be YOUR service: https://littlelingo.onrender.com currently answers
+//      from a non-Node app (x-render-origin-server: gunicorn), so keep this in
+//      sync with the Render dashboard after every redeploy.
 const ENV_API = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
-const PRODUCTION_API = 'https://littlelingo-5lfy.onrender.com'
+const PRODUCTION_API = 'https://littlelingo.onrender.com'
 const API_CANDIDATES = [...new Set([ENV_API, '', PRODUCTION_API])]
-const REMOTE_TIMEOUT_MS = 2500
+const REMOTE_TIMEOUT_MS = 10000 // Render free plan sleeps; a cold start can take ~50s, so don't give up in 2.5s
 const REMOTE_PROBE_TTL_MS = 60 * 1000 // re-probe after 60s so cold starts recover
 
 let remoteState = { available: false, checkedAt: 0, base: '' }
