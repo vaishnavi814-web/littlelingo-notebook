@@ -51,4 +51,12 @@ const entrySchema = new mongoose.Schema(
   { timestamps: true },
 )
 
-module.exports = mongoose.model('Entry', entrySchema)
+// Always target the littlelingo database explicitly. When the URI has no path
+// (e.g. mongodb+srv://...net/ with an empty path), the driver silently uses the
+// driver-default db name ("test"), so writes land in the wrong place and
+// Compass shows an empty/other database. Embedded ObjectId/dates/numbers only.
+const connection = mongoose.connection.useDb(process.env.MONGO_DB || 'littlelingo', {
+  useCache: true,
+})
+
+module.exports = connection.model('Entry', entrySchema)
