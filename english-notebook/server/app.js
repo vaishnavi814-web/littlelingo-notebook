@@ -8,7 +8,7 @@ const express = require('express')
 const multer = require('multer')
 const path = require('path')
 const { randomUUID } = require('crypto')
-const { init, uploadDir } = require('./store')
+const { init, uploadDir, getActiveName } = require('./store')
 const entriesRouter = require('./routes/entries')
 const aiRouter = require('./routes/ai')
 
@@ -33,8 +33,12 @@ app.use((req, res, next) => {
   next()
 })
 
+// Liveness + readiness probe used by Render (healthCheckPath) and the client's
+// API detection. Never throws: if the store failed to start, report it so the
+// cause is visible instead of a bare crash loop.
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', database: 'connected' })
+  const database = getActiveName()
+  res.json({ status: 'ok', database: database || 'disconnected' })
 })
 
 app.use('/api/entries', entriesRouter)

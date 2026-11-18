@@ -32,6 +32,15 @@ const mongoStore = require('./store-mongo')
 const sqliteStore = require('./store-sqlite')
 
 let active = null
+
+// Name of the store currently serving requests ('mongodb' | 'sqlite' | null).
+// Used by /api/health so a deploy that silently fell back is visible.
+const getActiveName = () => {
+  if (active === mongoStore) return 'mongodb'
+  if (active === sqliteStore) return 'sqlite'
+  return null
+}
+
 const init = async () => {
   if (process.env.VERCEL && !process.env.MONGO_URI) {
     throw new Error('MONGO_URI is not set on Vercel. Add it in Project Settings -> Environment Variables, then redeploy.')
@@ -62,7 +71,7 @@ const names = [
   'softDelete', 'restore', 'permanentDelete', 'updateVocabularyItem',
   'deleteVocabularyItem', 'recordReview',
 ]
-const facade = { init, uploadDir, dataDir }
+const facade = { init, uploadDir, dataDir, getActiveName }
 for (const name of names) {
   facade[name] = (...args) => active[name](...args)
 }

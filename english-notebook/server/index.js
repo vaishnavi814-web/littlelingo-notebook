@@ -6,6 +6,14 @@ const port = process.env.PORT === '0' ? 0 : Number(process.env.PORT) || 5000
 const host = process.env.HOST || '127.0.0.1'
 
 let server
+// If the store cannot start (e.g. Atlas unreachable with REQUIRE_MONGO=true), log
+// the reason instead of letting an unhandled rejection kill the process before
+// /api/health can answer — Render shows the log line as the failure cause.
+process.on('unhandledRejection', (error) => {
+  console.error(`English notebook API failed to start: ${error?.message || error}`)
+  process.exit(1)
+})
+
 const startedServer = started.then(() => new Promise((resolve, reject) => {
   server = app.listen(port, host, () => {
     const actualPort = server.address().port

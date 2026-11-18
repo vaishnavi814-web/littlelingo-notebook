@@ -1,21 +1,22 @@
 # Render Blueprint for the littlelingo app + backend.
-# One service serves both the React UI (copied from english-notebook/client/dist)
-# and the Express API. Data lives in MongoDB Atlas, so no disk is required.
+# One web service serves the Express API (/api/*). Data lives in MongoDB Atlas,
+# so no disk is required. The React UI is deployed separately on Vercel and
+# calls this service cross-origin (see ALLOWED_ORIGIN below).
+
 services:
   - type: web
     name: littlelingo-api
     runtime: node
     plan: free
-    buildCommand: |
-      npm --prefix english-notebook/client ci
-      npm --prefix english-notebook/client run build
-      npm --prefix english-notebook/server ci
-      mkdir -p english-notebook/server/public
-      cp -r english-notebook/client/dist/. english-notebook/server/public/
-    startCommand: node english-notebook/server/index.js
+    rootDir: english-notebook/server
+    buildCommand: npm ci
+    startCommand: node index.js
+    healthCheckPath: /api/health
     envVars:
       - key: HOST
         value: 0.0.0.0
+      - key: NODE_ENV
+        value: production
       # Atlas connection string. Set this in the Render dashboard (Environment).
       - key: MONGO_URI
         sync: false
