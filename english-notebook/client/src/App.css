@@ -115,6 +115,9 @@ button {
 }
 
 .side-nav button {
+  --nav-accent: #d7788f;
+  --nav-ink: #b65f78;
+  --nav-tint: #f9edf0;
   min-height: 44px;
   display: flex;
   align-items: center;
@@ -127,22 +130,117 @@ button {
   background: transparent;
   font-size: 12px;
   font-weight: 600;
+  transition: color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+/* Each destination gets its own colour family, not just the active state. */
+.side-nav button[data-tone='coral'] { --nav-accent: #e8896d; --nav-ink: #b9664d; --nav-tint: #fdf0eb; }
+.side-nav button[data-tone='blue'] { --nav-accent: #7ba7d4; --nav-ink: #557da9; --nav-tint: #eaf2fa; }
+.side-nav button[data-tone='green'] { --nav-accent: #8db78c; --nav-ink: #5f8560; --nav-tint: #eef6ec; }
+.side-nav button[data-tone='violet'] { --nav-accent: #a994cb; --nav-ink: #7f69a6; --nav-tint: #f3eef9; }
+.side-nav button[data-tone='amber'] { --nav-accent: #dfb269; --nav-ink: #a5803f; --nav-tint: #fbf3e4; }
+.side-nav button[data-tone='teal'] { --nav-accent: #71b3ab; --nav-ink: #4d8b84; --nav-tint: #e9f6f3; }
+.side-nav button[data-tone='slate'] { --nav-accent: #9aa5b4; --nav-ink: #6e7a8a; --nav-tint: #eef1f5; }
+
+.side-nav button:hover {
+  color: var(--nav-ink);
+  background: var(--nav-tint);
+  transform: translateX(3px);
+}
+
+.side-nav button:hover svg {
+  color: var(--nav-accent);
+  transform: rotate(-8deg) scale(1.14);
 }
 
 .side-nav button.active {
-  color: #b65f78;
-  background: #f9edf0;
+  color: var(--nav-ink);
+  background: var(--nav-tint);
+  box-shadow: inset 3px 0 var(--nav-accent);
+}
+
+.side-nav button.active svg {
+  color: var(--nav-accent);
+}
+
+.side-nav button:focus-visible,
+.sidebar-toggle:focus-visible,
+.hamburger-button:focus-visible {
+  outline: 2px solid var(--nav-accent, #d7788f);
+  outline-offset: 2px;
 }
 
 .side-nav button svg {
   flex: none;
+  transition: transform .18s ease, color .18s ease;
 }
 
 .nav-count {
   margin-left: auto;
+  padding: 2px 7px;
   color: #a89d94;
+  border-radius: 999px;
+  background: #f6f1ec;
   font-size: 11px;
 }
+
+.side-nav button:hover .nav-count,
+.side-nav button.active .nav-count {
+  color: var(--nav-ink);
+  background: #fff;
+}
+
+.sidebar-toggle {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 12px;
+  padding: 0 12px;
+  color: #857b72;
+  text-align: left;
+  border: 1px dashed #e9ded4;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 650;
+  transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.sidebar-toggle:hover {
+  color: #b65f78;
+  border-color: #e5b9c4;
+  background: #fdf3f5;
+  transform: translateX(2px);
+}
+
+.sidebar-toggle:hover svg {
+  transform: rotate(90deg);
+}
+
+.sidebar-toggle svg {
+  flex: none;
+  transition: transform .18s ease;
+}
+
+/* Keep the colour coding legible on the dark theme too. */
+.theme-midnight .side-nav button[data-tone='rose'] { --nav-accent: #e6a0b4; --nav-ink: #f0c2d0; --nav-tint: #4a3c4b; }
+.theme-midnight .side-nav button[data-tone='coral'] { --nav-accent: #e9a58f; --nav-ink: #f0c5b6; --nav-tint: #503e3c; }
+.theme-midnight .side-nav button[data-tone='blue'] { --nav-accent: #9dc4f0; --nav-ink: #c5ddf6; --nav-tint: #39495c; }
+.theme-midnight .side-nav button[data-tone='green'] { --nav-accent: #a7cfa3; --nav-ink: #cde5c8; --nav-tint: #3a4c3e; }
+.theme-midnight .side-nav button[data-tone='violet'] { --nav-accent: #c0ade3; --nav-ink: #dccff0; --nav-tint: #433c56; }
+.theme-midnight .side-nav button[data-tone='amber'] { --nav-accent: #e7c283; --nav-ink: #f1dcb1; --nav-tint: #4e4533; }
+.theme-midnight .side-nav button[data-tone='teal'] { --nav-accent: #9ad3cb; --nav-ink: #c7e7e1; --nav-tint: #344e4b; }
+.theme-midnight .side-nav button[data-tone='slate'] { --nav-accent: #b6c0cd; --nav-ink: #d7dee7; --nav-tint: #414751; }
+.theme-midnight .side-nav button:hover,
+.theme-midnight .side-nav button.active {
+  color: var(--nav-ink);
+  background: var(--nav-tint);
+}
+
+.theme-midnight .nav-count { color: #d6cbc5; background: #45434e; }
+.theme-midnight .side-nav button.active .nav-count { color: var(--nav-ink); background: #57545f; }
 
 .sidebar-bottom {
   margin-top: auto;
@@ -235,6 +333,45 @@ button {
 .main-area {
   min-height: 100vh;
   margin-left: 248px;
+  transition: margin-left .22s ease;
+}
+
+/* Desktop hamburger collapses the sidebar into an icon rail. On phones the
+   same control opens the slide-out drawer instead (see the mobile rules). */
+@media (min-width: 761px) {
+  .sidebar { transition: width .22s ease, padding .22s ease; }
+
+  .sidebar-collapsed .sidebar {
+    width: 72px;
+    padding-inline: 10px;
+  }
+
+  .sidebar-collapsed .brand {
+    justify-content: center;
+    margin-inline: 0;
+  }
+
+  .sidebar-collapsed .brand > span:last-child,
+  .sidebar-collapsed .sidebar-label,
+  .sidebar-collapsed .side-nav button > span:not(.nav-count),
+  .sidebar-collapsed .nav-count,
+  .sidebar-collapsed .sidebar-toggle span,
+  .sidebar-collapsed .sidebar-bottom {
+    display: none;
+  }
+
+  .sidebar-collapsed .side-nav button,
+  .sidebar-collapsed .sidebar-toggle {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .sidebar-collapsed .side-nav button svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .sidebar-collapsed .main-area { margin-left: 72px; }
 }
 
 .topbar {
@@ -2510,10 +2647,44 @@ button {
 
 /* ---------- Mobile-first refinements ---------- */
 
-/* The slide-out menu button and the collection switcher are phone-only. */
-.mobile-menu-button,
+/* The collection switcher is phone-only; the hamburger works at every width. */
 .mobile-collection-tabs {
   display: none;
+}
+
+.hamburger-button {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #7d6f65;
+  border: 1px solid #efe6de;
+  border-radius: 11px;
+  background: #fff;
+  transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.hamburger-button svg {
+  transition: transform .18s ease;
+}
+
+.hamburger-button:hover {
+  color: #b65f78;
+  border-color: #f0d7dd;
+  background: #fdf2f4;
+  transform: rotate(-6deg);
+}
+
+.hamburger-button:hover svg {
+  transform: scale(1.12);
+}
+
+.hamburger-button[aria-expanded='true'] {
+  color: #b65f78;
+  border-color: #f0d7dd;
+  background: #fdf2f4;
 }
 
 /* ---------- Tablets and small laptops ---------- */
@@ -3158,10 +3329,6 @@ button {
 /* Phone-shaped tablets: keep the drawer but a bit wider. */
 @media (min-width: 761px) and (max-width: 1000px) {
   .sidebar { width: 214px; }
-}
-
-@media (max-width: 760px) and (min-width: 761px) {
-  .mobile-menu-button { display: none; }
 }
 
 /* Very small phones */

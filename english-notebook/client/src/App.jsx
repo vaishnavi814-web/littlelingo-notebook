@@ -116,14 +116,16 @@ const downloadFile = (name, content, type) => {
 const formatTags = (tags = []) => tags.join(', ')
 
 const vocabularyCategories = [
-  { id: 'word', label: 'Words', icon: 'book' },
-  { id: 'sentence', label: 'Sentences', icon: 'bookOpen' },
-  { id: 'phrase', label: 'Phrases', icon: 'sparkle' },
-  { id: 'phrasal-verb', label: 'Phrasal verbs', icon: 'arrow' },
-  { id: 'idiom', label: 'Idioms', icon: 'sparkle' },
-  { id: 'collocation', label: 'Collocations', icon: 'link' },
-  { id: 'expression', label: 'Expressions', icon: 'bookOpen' },
+  { id: 'word', label: 'Words', icon: 'book', tone: 'rose' },
+  { id: 'sentence', label: 'Sentences', icon: 'bookOpen', tone: 'blue' },
+  { id: 'phrase', label: 'Phrases', icon: 'sparkle', tone: 'violet' },
+  { id: 'phrasal-verb', label: 'Phrasal verbs', icon: 'arrow', tone: 'amber' },
+  { id: 'idiom', label: 'Idioms', icon: 'sparkle', tone: 'coral' },
+  { id: 'collocation', label: 'Collocations', icon: 'link', tone: 'teal' },
+  { id: 'expression', label: 'Expressions', icon: 'bookOpen', tone: 'green' },
 ]
+
+const isPhoneLayout = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches
 
 const categoryLabel = (category) => vocabularyCategories.find((item) => item.id === category)?.label || 'Words'
 const categorySingular = {
@@ -1375,6 +1377,9 @@ function Icon({ name, size = 20 }) {
     cards: <><rect x="4" y="4" width="13" height="16" rx="2" /><path d="M8 8h5M8 12h5M19 7h1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H9" /></>,
     calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18m-13 4h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" /></>,
     menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
+    heart: <path d="M20.8 5.1a5.4 5.4 0 0 0-7.6 0L12 6.3l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.3a5.4 5.4 0 0 0 0-7.6Z" />,
+    chart: <><path d="M4 20V11M10 20V5M16 20v-7M22 20H2" /></>,
+    settings: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9 7 7m10 10 2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" /></>,
   }
   return (
     <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -1863,6 +1868,7 @@ function App() {
   const [query, setQuery] = useState('')
   const [section, setSection] = useState('home')
   const [navOpen, setNavOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [tagFilter, setTagFilter] = useState('')
   const [difficultyFilter, setDifficultyFilter] = useState('')
   const [trashEntries, setTrashEntries] = useState([])
@@ -2420,6 +2426,14 @@ function App() {
     { keys: 'Ctrl / ⌘ + S', label: 'Save the open page' },
     { keys: 'Esc', label: 'Close the open editor or dialog' },
   ]
+  // Phones use a slide-out drawer; larger screens collapse the sidebar to a
+  // slim icon rail. One hamburger control handles both layouts.
+  const sidebarIsOpen = isPhoneLayout() ? navOpen : !sidebarCollapsed
+  const toggleSidebar = () => {
+    if (isPhoneLayout()) setNavOpen((open) => !open)
+    else setSidebarCollapsed((collapsed) => !collapsed)
+  }
+
   const playPronunciation = (word) => {
     if (!('speechSynthesis' in window)) {
       setError('Pronunciation audio is not supported by this browser.')
@@ -2432,7 +2446,7 @@ function App() {
   }
 
   return (
-    <div className={`app-shell theme-${preferences.theme} paper-${preferences.paper} lines-${preferences.lines}`}>
+    <div className={`app-shell theme-${preferences.theme} paper-${preferences.paper} lines-${preferences.lines} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className={`sidebar ${navOpen ? 'sidebar-open' : ''}`}>
         <a className="brand" href="#" onClick={(event) => { event.preventDefault(); setSection('home'); setNavOpen(false) }}>
           <span className="brand-mark"><Icon name="bookOpen" size={22} /></span>
@@ -2440,18 +2454,19 @@ function App() {
         </a>
         <div className="sidebar-label">YOUR SPACE</div>
         <nav className="side-nav" aria-label="Main navigation">
-          <button title="My notebook" aria-label="My notebook" className={section === 'home' ? 'active' : ''} onClick={() => { setSection('home'); setNavOpen(false) }}><Icon name="home" /> <span>My notebook</span><span className="nav-count">{pageCount}</span></button>
-          <button title="Favorites" aria-label="Favorites" className={section === 'favorites' ? 'active' : ''} aria-current={section === 'favorites' ? 'page' : undefined} onClick={() => { setSection('favorites'); setNavOpen(false) }}><span className="nav-symbol">♡</span><span>Favorites</span></button>
-          <button title="Daily review" aria-label="Daily review" className={section === 'review' ? 'active' : ''} aria-current={section === 'review' ? 'page' : undefined} onClick={() => { setSection('review'); setNavOpen(false) }}><Icon name="cards" /> <span>Daily review</span><span className="nav-count">{reviewCards.length}</span></button>
-          <button title="Grammar guide" aria-label="Grammar guide" className={section === 'grammar' ? 'active' : ''} aria-current={section === 'grammar' ? 'page' : undefined} onClick={() => { setSection('grammar'); setNavOpen(false) }}><span className="nav-symbol">Aa</span><span>Grammar guide</span><span className="nav-count">{grammarLessons.concat(generatedLessons).filter((lesson) => grammarProgress[lesson.id]?.completed).length}/{grammarLessons.length + generatedLessons.length}</span></button>
-          <button title="Learning calendar" aria-label="Learning calendar" className={section === 'calendar' ? 'active' : ''} aria-current={section === 'calendar' ? 'page' : undefined} onClick={() => { setSection('calendar'); setNavOpen(false) }}><Icon name="calendar" /> <span>Learning calendar</span><span className="nav-count">{activityStats.currentStreak ? `${activityStats.currentStreak}d` : ''}</span></button>
-          <button title="Progress dashboard" aria-label="Progress dashboard" className={section === 'dashboard' ? 'active' : ''} aria-current={section === 'dashboard' ? 'page' : undefined} onClick={() => { setSection('dashboard'); setNavOpen(false) }}><span className="nav-symbol">↗</span><span>Progress</span></button>
+          <button title="My notebook" aria-label="My notebook" data-tone="rose" className={section === 'home' ? 'active' : ''} onClick={() => { setSection('home'); setNavOpen(false) }}><Icon name="home" /> <span>My notebook</span><span className="nav-count">{pageCount}</span></button>
+          <button title="Favorites" aria-label="Favorites" data-tone="coral" className={section === 'favorites' ? 'active' : ''} aria-current={section === 'favorites' ? 'page' : undefined} onClick={() => { setSection('favorites'); setNavOpen(false) }}><Icon name="heart" /> <span>Favorites</span></button>
+          <button title="Daily review" aria-label="Daily review" data-tone="blue" className={section === 'review' ? 'active' : ''} aria-current={section === 'review' ? 'page' : undefined} onClick={() => { setSection('review'); setNavOpen(false) }}><Icon name="cards" /> <span>Daily review</span><span className="nav-count">{reviewCards.length}</span></button>
+          <button title="Grammar guide" aria-label="Grammar guide" data-tone="violet" className={section === 'grammar' ? 'active' : ''} aria-current={section === 'grammar' ? 'page' : undefined} onClick={() => { setSection('grammar'); setNavOpen(false) }}><Icon name="book" /> <span>Grammar guide</span><span className="nav-count">{grammarLessons.concat(generatedLessons).filter((lesson) => grammarProgress[lesson.id]?.completed).length}/{grammarLessons.length + generatedLessons.length}</span></button>
+          <button title="Learning calendar" aria-label="Learning calendar" data-tone="green" className={section === 'calendar' ? 'active' : ''} aria-current={section === 'calendar' ? 'page' : undefined} onClick={() => { setSection('calendar'); setNavOpen(false) }}><Icon name="calendar" /> <span>Learning calendar</span><span className="nav-count">{activityStats.currentStreak ? `${activityStats.currentStreak}d` : ''}</span></button>
+          <button title="Progress dashboard" aria-label="Progress dashboard" data-tone="amber" className={section === 'dashboard' ? 'active' : ''} aria-current={section === 'dashboard' ? 'page' : undefined} onClick={() => { setSection('dashboard'); setNavOpen(false) }}><Icon name="chart" /> <span>Progress</span></button>
           <div className="sidebar-label category-label">COLLECT BY TYPE</div>
           {vocabularyCategories.map((category) => (
             <button
               key={category.id}
               title={category.label}
               aria-label={category.label}
+              data-tone={category.tone}
               aria-current={section === category.id ? 'page' : undefined}
               className={section === category.id ? 'active' : ''}
               onClick={() => { setSection(category.id); setNavOpen(false) }}
@@ -2462,9 +2477,13 @@ function App() {
             </button>
           ))}
           <div className="sidebar-label category-label">NOTEBOOK TOOLS</div>
-          <button title="Recycle bin" aria-label="Recycle bin" className={section === 'trash' ? 'active' : ''} aria-current={section === 'trash' ? 'page' : undefined} onClick={() => { setNavOpen(false); setTrashLoading(true); setTrashError(''); if (section === 'trash') refreshTrash().catch((loadError) => setTrashError(loadError.message)); else setSection('trash') }}><span className="nav-symbol">♲</span><span>Recycle bin</span><span className="nav-count">{trashEntries.length || ''}</span></button>
-          <button title="Notebook settings" aria-label="Notebook settings" className={section === 'settings' ? 'active' : ''} aria-current={section === 'settings' ? 'page' : undefined} onClick={() => { setSection('settings'); setNavOpen(false) }}><span className="nav-symbol">⚙</span><span>Settings &amp; backup</span></button>
+          <button title="Recycle bin" aria-label="Recycle bin" data-tone="slate" className={section === 'trash' ? 'active' : ''} aria-current={section === 'trash' ? 'page' : undefined} onClick={() => { setNavOpen(false); setTrashLoading(true); setTrashError(''); if (section === 'trash') refreshTrash().catch((loadError) => setTrashError(loadError.message)); else setSection('trash') }}><Icon name="trash" /> <span>Recycle bin</span><span className="nav-count">{trashEntries.length || ''}</span></button>
+          <button title="Notebook settings" aria-label="Notebook settings" data-tone="teal" className={section === 'settings' ? 'active' : ''} aria-current={section === 'settings' ? 'page' : undefined} onClick={() => { setSection('settings'); setNavOpen(false) }}><Icon name="settings" /> <span>Settings &amp; backup</span></button>
         </nav>
+        <button type="button" className="sidebar-toggle" onClick={toggleSidebar} aria-expanded={sidebarIsOpen} aria-label={sidebarIsOpen ? 'Close navigation menu' : 'Open navigation menu'}>
+          <Icon name="menu" size={18} />
+          <span>{sidebarIsOpen ? 'Close menu' : 'Open menu'}</span>
+        </button>
         <div className="sidebar-bottom">
           <div className="daily-card">
             <span className="daily-sparkle">✦</span>
@@ -2478,8 +2497,8 @@ function App() {
 
       <main className="main-area">
         <header className="topbar">
-          <button type="button" className="mobile-menu-button" aria-label={navOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={navOpen} onClick={() => setNavOpen((open) => !open)}>
-            <Icon name={navOpen ? 'close' : 'menu'} size={22} />
+          <button type="button" className="mobile-menu-button hamburger-button" aria-label={sidebarIsOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={sidebarIsOpen} onClick={toggleSidebar} title={sidebarIsOpen ? 'Close menu' : 'Open menu'}>
+            <Icon name={sidebarIsOpen ? 'close' : 'menu'} size={22} />
           </button>
           <div className="breadcrumb">My space <span>/</span> <strong>{breadcrumbTitle}</strong></div>
           <div className="topbar-right">
