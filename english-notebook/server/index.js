@@ -3,7 +3,7 @@
 const { app, started } = require('./app')
 
 const port = process.env.PORT === '0' ? 0 : Number(process.env.PORT) || 5000
-const host = process.env.HOST || '127.0.0.1'
+const host = process.env.HOST || '0.0.0.0'
 
 let server
 // If the store cannot start (e.g. Atlas unreachable with REQUIRE_MONGO=true), log
