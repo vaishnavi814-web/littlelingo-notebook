@@ -5,6 +5,7 @@
 require('dotenv').config()
 
 const express = require('express')
+const fs = require('fs')
 const multer = require('multer')
 const path = require('path')
 const { randomUUID } = require('crypto')
@@ -14,6 +15,7 @@ const aiRouter = require('./routes/ai')
 
 const app = express()
 const publicDir = path.join(__dirname, 'public')
+const indexHtmlPath = path.join(publicDir, 'index.html')
 const imageExtensions = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
@@ -56,7 +58,13 @@ app.use(express.static(publicDir))
 // SPA fallback for non-API paths (desktop only).
 app.use((req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next()
-  res.sendFile(path.join(publicDir, 'index.html'), (error) => { if (error) next(error) })
+  if (!fs.existsSync(indexHtmlPath)) {
+    if (req.path === '/') {
+      return res.json({ status: 'ok', service: 'english-notebook-api' })
+    }
+    return res.status(404).json({ message: 'Not found.' })
+  }
+  res.sendFile(indexHtmlPath, (error) => { if (error) next(error) })
 })
 
 // Uploads
