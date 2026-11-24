@@ -2507,3 +2507,678 @@ button {
   .modal-footer { justify-content: flex-end; }
   .delete-button { margin-right: auto; }
 }
+
+/* ---------- Mobile-first refinements ---------- */
+
+/* The slide-out menu button and the collection switcher are phone-only. */
+.mobile-menu-button,
+.mobile-collection-tabs {
+  display: none;
+}
+
+/* ---------- Tablets and small laptops ---------- */
+@media (max-width: 900px) {
+  .topbar { padding-inline: 24px; }
+  .search-box { width: 190px; }
+  .entry-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 760px) {
+  .topbar {
+    gap: 10px;
+    padding: 0 12px;
+    overflow: hidden;
+  }
+
+  .mobile-menu-button {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: #7d6f65;
+    border: 1px solid #efe6de;
+    border-radius: 11px;
+    background: #fff;
+  }
+
+  .mobile-menu-button[aria-expanded='true'] {
+    color: #b65f78;
+    border-color: #f0d7dd;
+    background: #fdf2f4;
+  }
+
+  .breadcrumb {
+    min-width: 0;
+    flex: 0 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topbar-right {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+
+  .search-box {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 230px;
+    height: 38px;
+    padding: 0 10px;
+    overflow: hidden;
+  }
+
+  .search-box input {
+    min-width: 0;
+    font-size: 13px;
+  }
+
+  /* Sidebar becomes a slide-out drawer with every destination in it. */
+  .sidebar {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    z-index: 20;
+    width: min(304px, 86vw);
+    height: 100dvh;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0;
+    overflow-y: auto;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+    border-top: 0;
+    border-left: 1px solid #f0e9e1;
+    border-radius: 18px 0 0 18px;
+    box-shadow: -18px 0 46px #4a362b40;
+    transform: translateX(105%);
+    transition: transform .26s ease;
+    visibility: hidden;
+  }
+
+  .sidebar-open {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .brand {
+    margin: 0 0 16px 4px;
+    font-size: 20px;
+  }
+
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .brand small {
+    display: block;
+  }
+
+  .sidebar-label {
+    display: block;
+    margin: 4px 0 10px 6px;
+  }
+
+  .side-nav {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    margin: 0;
+    overflow: visible;
+  }
+
+  .side-nav button {
+    width: 100%;
+    min-width: 0;
+    min-height: 47px;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+
+  .side-nav button span:not(.nav-count),
+  .nav-count {
+    display: inline;
+  }
+
+  .nav-count {
+    margin-left: auto;
+    font-size: 12px;
+  }
+
+  .nav-symbol {
+    width: 22px;
+    font-size: 20px;
+  }
+
+  .side-nav .category-label {
+    margin: 16px 0 6px 6px;
+  }
+
+  .sidebar-bottom {
+    display: block;
+    margin-top: 18px;
+  }
+
+  .daily-card {
+    margin-bottom: 12px;
+  }
+
+  .main-area {
+    margin: 0;
+    padding-bottom: 24px;
+  }
+
+  /* Wrapping horizontal chip rows replace hidden horizontal scrolling. */
+  .mobile-collection-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 14px 0 0;
+  }
+
+  .mobile-collection-tabs button {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 13px;
+    color: #7f7268;
+    border: 1px solid #eee2d8;
+    border-radius: 999px;
+    background: #fffefa;
+    font-size: 12.5px;
+    font-weight: 650;
+  }
+
+  .mobile-collection-tabs button span {
+    color: #a89b90;
+    font-size: 11px;
+  }
+
+  .mobile-collection-tabs button.active {
+    color: #b65f78;
+    border-color: #efd2da;
+    background: #fdf0f3;
+  }
+
+  .mobile-collection-tabs button.active span {
+    color: #c07e90;
+  }
+
+  .page-content {
+    width: calc(100% - 28px);
+  }
+
+  .welcome-panel {
+    margin-top: 14px;
+    padding: 22px 18px;
+  }
+
+  .welcome-copy {
+    width: 100%;
+  }
+
+  .welcome-copy h1 {
+    font-size: clamp(30px, 8.6vw, 38px);
+  }
+
+  .welcome-copy > p {
+    max-width: 100%;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .welcome-copy .primary-button {
+    width: 100%;
+    min-height: 46px;
+    justify-content: center;
+    margin-top: 16px;
+    font-size: 14px;
+  }
+
+  .welcome-art {
+    width: 30%;
+    opacity: .28;
+  }
+
+  .category-page-hero {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    min-height: 0;
+    margin-top: 14px;
+    padding: 18px 16px;
+  }
+
+  .category-page-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+  }
+
+  .category-page-copy {
+    flex: 1 1 190px;
+    min-width: 0;
+  }
+
+  .category-page-copy h1 {
+    margin: 8px 0 6px;
+    font-size: clamp(24px, 6.6vw, 30px);
+    letter-spacing: -0.9px;
+  }
+
+  .category-page-copy > p {
+    max-width: 100%;
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+
+  .category-page-action {
+    position: static;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0;
+  }
+
+  .category-page-count {
+    display: inline;
+    font-size: 11.5px;
+  }
+
+  .category-page-action .primary-button {
+    min-height: 42px;
+    padding: 0 15px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+    margin-top: 12px;
+  }
+
+  .stat-card {
+    min-height: 74px;
+    padding: 11px;
+  }
+
+  .stat-card strong { font-size: 18px; }
+  .stat-card div > span { font-size: 10.5px; }
+
+  .quote-stat {
+    grid-column: 1 / -1;
+    min-height: 58px;
+  }
+
+  .entries-section {
+    margin-top: 24px;
+  }
+
+  .section-heading {
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  .section-heading h2 {
+    font-size: 22px;
+  }
+
+  .text-button {
+    min-height: 38px;
+    padding: 0 13px;
+    border: 1px solid #efd8de;
+    border-radius: 999px;
+    background: #fff6f8;
+    font-size: 12.5px;
+  }
+
+  .entry-filters {
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 8px;
+    margin: 12px 0 14px;
+  }
+
+  .entry-filters label {
+    flex: 1 1 140px;
+    font-size: 10.5px;
+  }
+
+  .entry-filters select {
+    width: 100%;
+    min-height: 42px;
+    font-size: 13px;
+  }
+
+  .entry-filters > button {
+    min-height: 42px;
+    font-size: 12.5px;
+  }
+
+  .entry-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .entry-card {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .entry-card h3 {
+    margin: 9px 0 8px;
+    font-size: 19px;
+    white-space: normal;
+  }
+
+  .entry-date {
+    font-size: 11.5px;
+  }
+
+  .entry-excerpt {
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+
+  .vocabulary-card-category {
+    font-size: 11.5px;
+  }
+
+  .word-pronunciation {
+    font-size: 13px;
+  }
+
+  .word-relations,
+  .word-relations span,
+  .notebook-saved-word-list p,
+  .notebook-saved-word-list em {
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+
+  .entry-tags {
+    gap: 6px;
+  }
+
+  .entry-tags span,
+  .notebook-page-tags span {
+    padding: 4px 9px;
+    font-size: 11px;
+  }
+
+  .entry-word-count {
+    font-size: 11.5px;
+  }
+
+  .vocabulary-entry-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  /* Card actions become a full-width, thumb-sized row. */
+  .vocabulary-card-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .vocabulary-card-actions button {
+    min-height: 40px;
+    flex: 1 1 auto;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .entry-favorite-button {
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .empty-state h3 { font-size: 17px; }
+  .empty-state p { font-size: 13px; }
+
+  /* Forms and dialogs get comfortable touch sizing. */
+  .category-entry-form,
+  .category-entry-field,
+  .category-entry-grid input,
+  .category-entry-grid textarea,
+  .category-entry-grid select,
+  .word-inputs input,
+  .word-inputs select,
+  .word-inputs textarea,
+  .category-item-field input,
+  .category-item-field select,
+  .category-item-field textarea,
+  .lesson-source-label textarea,
+  .grammar-search input,
+  .grammar-level-filter select,
+  .title-input,
+  .date-field input {
+    font-size: 16px;
+  }
+
+  .category-entry-field > span,
+  .category-item-field,
+  .entry-metadata-fields > label:not(.favorite-check),
+  .date-field > span {
+    font-size: 11.5px;
+  }
+
+  .category-entry-grid input,
+  .category-entry-grid textarea,
+  .category-entry-grid select,
+  .category-entry-field select,
+  .category-item-field input,
+  .category-item-field select,
+  .word-inputs input,
+  .word-inputs select {
+    min-height: 44px;
+  }
+
+  .category-entry-form-actions,
+  .category-entry-form-footer {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .category-entry-form-actions button,
+  .category-entry-form-footer .primary-button {
+    min-height: 44px;
+    flex: 1 1 auto;
+    justify-content: center;
+    font-size: 13.5px;
+  }
+
+  .category-item-modal {
+    width: 100%;
+    padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .modal-header h2 {
+    font-size: 21px;
+  }
+
+  .modal-header .section-kicker {
+    font-size: 9.5px;
+  }
+
+  /* Learning pages */
+  .learning-page-hero p { font-size: 13px; }
+  .learning-hero-stats { flex-wrap: wrap; gap: 8px 14px; font-size: 12px; }
+  .learning-hero-stats span strong { font-size: 16px; }
+  .review-mode-switch button { min-height: 42px; font-size: 13px; }
+  .review-card h2 { font-size: 23px; }
+  .review-answer p { font-size: 13.5px; }
+  .review-ratings { flex-wrap: wrap; gap: 8px; }
+  .review-ratings button { flex: 1 1 130px; min-height: 50px; font-size: 13px; }
+  .sentence-quiz-options button { min-height: 44px; font-size: 14px; }
+  .sentence-quiz-progress { font-size: 10.5px; }
+  .reveal-answer-button { min-height: 44px; font-size: 13.5px; }
+  .calendar-heading h2 { font-size: 19px; }
+  .calendar-month-controls button { width: 40px; height: 40px; }
+  .calendar-day, .calendar-blank { min-height: 42px; font-size: 12.5px; }
+  .dashboard-stat-grid article small { font-size: 11.5px; }
+  .settings-card label { font-size: 12px; }
+  .settings-card select { min-height: 44px; font-size: 15px; }
+  .export-actions button { min-height: 44px; font-size: 13px; }
+  .grammar-topic-list button strong { font-size: 13px; }
+  .grammar-answer-options button { min-height: 46px; font-size: 14px; }
+  .grammar-lesson-header h2 { font-size: 22px; }
+  .grammar-lesson p, .grammar-examples li, .grammar-mistakes li { font-size: 13.5px; line-height: 1.65; }
+
+  /* Notebook page viewer */
+  .notebook-saved-word-list article { min-width: 78%; }
+  .notebook-turn-navigation button { min-height: 38px; font-size: 11px; }
+  .notebook-page-writing { font-size: 14.5px; line-height: 1.8; }
+  .notebook-page-heading h1 { font-size: 24px; }
+
+  /* Modal shells become full-height sheets. */
+  .modal-backdrop,
+  .notebook-view-backdrop {
+    padding: 8px;
+    align-items: stretch;
+  }
+
+  .editor-modal,
+  .category-item-modal,
+  .notebook-view-modal {
+    max-height: calc(100dvh - 16px);
+    border-radius: 14px;
+  }
+
+  /* Rich text toolbar stays usable without squeezing labels out. */
+  .editor-toolbar {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .editor-toolbar button {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .toolbar-divider { display: none; }
+
+  .editor-toolbar .toolbar-ai-button {
+    min-height: 36px;
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+
+  .writing-paper {
+    min-height: 200px;
+    font-size: 16px;
+  }
+
+  .word-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .word-row-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .word-row-actions button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .word-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .word-inputs textarea,
+  .word-inputs .favorite-check,
+  .add-word-button,
+  .cancel-word-edit {
+    grid-column: 1 / -1;
+  }
+
+  .add-word-button,
+  .cancel-word-edit {
+    min-height: 44px;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .modal-footer {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .modal-footer .primary-button {
+    min-height: 46px;
+    flex: 1 1 100%;
+    justify-content: center;
+    font-size: 14.5px;
+  }
+
+  .delete-button { min-height: 42px; font-size: 13px; }
+
+  .page-footer {
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .error-banner,
+  .success-banner {
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12.5px;
+  }
+
+  .trash-entry button { min-height: 40px; font-size: 12px; }
+}
+
+/* Phone-shaped tablets: keep the drawer but a bit wider. */
+@media (min-width: 761px) and (max-width: 1000px) {
+  .sidebar { width: 214px; }
+}
+
+@media (max-width: 760px) and (min-width: 761px) {
+  .mobile-menu-button { display: none; }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .topbar { padding: 0 10px; gap: 8px; }
+  .breadcrumb { font-size: 11px; }
+  .search-box { max-width: 180px; }
+  .search-box input { font-size: 12px; }
+  .page-content { width: calc(100% - 20px); }
+  .welcome-copy h1 { font-size: 28px; }
+  .category-page-copy h1 { font-size: 22px; }
+  .mobile-collection-tabs button { font-size: 12px; padding: 0 11px; }
+  .review-ratings button { flex: 1 1 100%; }
+  .calendar-day, .calendar-blank { min-height: 37px; font-size: 11.5px; }
+}
+
+/* At phone widths the search field fills the space next to the menu button. */
+@media (max-width: 760px) {
+  .topbar > .breadcrumb { display: none; }
+}

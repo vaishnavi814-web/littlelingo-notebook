@@ -1374,6 +1374,7 @@ function Icon({ name, size = 20 }) {
     bookOpen: <><path d="M12 7v14" /><path d="M3 18V5a2 2 0 0 1 2-2h3a4 4 0 0 1 4 4 4 4 0 0 1 4-4h3a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-4a3 3 0 0 0-3 2 3 3 0 0 0-3-2H5a2 2 0 0 1-2-2Z" /></>,
     cards: <><rect x="4" y="4" width="13" height="16" rx="2" /><path d="M8 8h5M8 12h5M19 7h1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H9" /></>,
     calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18m-13 4h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" /></>,
+    menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
   }
   return (
     <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -1399,10 +1400,20 @@ function CategoryEntryForm({ category, value, onChange, onSubmit, onCancel, subm
         </label>
       )
     }
+    // Notes and stories are longer than a single line, so they wrap instead of
+    // truncating their placeholder on narrow screens.
+    if (field === 'usageNote' || field === 'origin') {
+      return (
+        <label className="category-entry-field category-entry-field-wide" key={field}>
+          <span>{detail.label}</span>
+          <textarea rows={2} maxLength={300} value={categoryDetailValue(value, field)} onChange={(event) => set(field, event.target.value)} placeholder={detail.placeholder} />
+        </label>
+      )
+    }
     return (
       <label className="category-entry-field" key={field}>
         <span>{detail.label}</span>
-        <input maxLength={field === 'usageNote' || field === 'origin' ? 300 : 120} value={categoryDetailValue(value, field)} onChange={(event) => set(field, event.target.value)} placeholder={detail.placeholder} />
+        <input maxLength={120} value={categoryDetailValue(value, field)} onChange={(event) => set(field, event.target.value)} placeholder={detail.placeholder} />
       </label>
     )
   }
@@ -1851,6 +1862,7 @@ function App() {
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [section, setSection] = useState('home')
+  const [navOpen, setNavOpen] = useState(false)
   const [tagFilter, setTagFilter] = useState('')
   const [difficultyFilter, setDifficultyFilter] = useState('')
   const [trashEntries, setTrashEntries] = useState([])
@@ -1934,6 +1946,7 @@ function App() {
           editorFormRef.current?.requestSubmit()
         }
       } else if (event.key === 'Escape') {
+        if (navOpen) setNavOpen(false)
         if (editorOpen) setEditorOpen(false)
         if (viewingEntryId) setViewingEntryId(null)
         if (categoryItemEditor) setCategoryItemEditor(null)
@@ -1947,7 +1960,15 @@ function App() {
     }
     window.addEventListener('keydown', focusSearch)
     return () => window.removeEventListener('keydown', focusSearch)
-  }, [editorOpen, viewingEntryId, categoryItemEditor, turnNotebookPage])
+  }, [editorOpen, viewingEntryId, categoryItemEditor, navOpen, turnNotebookPage])
+
+  // Stop the page behind the mobile navigation drawer from scrolling.
+  useEffect(() => {
+    if (!navOpen) return undefined
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previous }
+  }, [navOpen])
 
   useEffect(() => {
     if (section !== 'trash') return
@@ -2412,19 +2433,19 @@ function App() {
 
   return (
     <div className={`app-shell theme-${preferences.theme} paper-${preferences.paper} lines-${preferences.lines}`}>
-      <aside className="sidebar">
-        <a className="brand" href="#" onClick={(event) => { event.preventDefault(); setSection('home') }}>
+      <aside className={`sidebar ${navOpen ? 'sidebar-open' : ''}`}>
+        <a className="brand" href="#" onClick={(event) => { event.preventDefault(); setSection('home'); setNavOpen(false) }}>
           <span className="brand-mark"><Icon name="bookOpen" size={22} /></span>
           <span>little<span className="brand-accent">lingo</span><small>YOUR ENGLISH JOURNAL</small></span>
         </a>
         <div className="sidebar-label">YOUR SPACE</div>
         <nav className="side-nav" aria-label="Main navigation">
-          <button title="My notebook" aria-label="My notebook" className={section === 'home' ? 'active' : ''} onClick={() => setSection('home')}><Icon name="home" /> <span>My notebook</span><span className="nav-count">{pageCount}</span></button>
-          <button title="Favorites" aria-label="Favorites" className={section === 'favorites' ? 'active' : ''} aria-current={section === 'favorites' ? 'page' : undefined} onClick={() => setSection('favorites')}><span className="nav-symbol">♡</span><span>Favorites</span></button>
-          <button title="Daily review" aria-label="Daily review" className={section === 'review' ? 'active' : ''} aria-current={section === 'review' ? 'page' : undefined} onClick={() => setSection('review')}><Icon name="cards" /> <span>Daily review</span><span className="nav-count">{reviewCards.length}</span></button>
-          <button title="Grammar guide" aria-label="Grammar guide" className={section === 'grammar' ? 'active' : ''} aria-current={section === 'grammar' ? 'page' : undefined} onClick={() => setSection('grammar')}><span className="nav-symbol">Aa</span><span>Grammar guide</span><span className="nav-count">{grammarLessons.concat(generatedLessons).filter((lesson) => grammarProgress[lesson.id]?.completed).length}/{grammarLessons.length + generatedLessons.length}</span></button>
-          <button title="Learning calendar" aria-label="Learning calendar" className={section === 'calendar' ? 'active' : ''} aria-current={section === 'calendar' ? 'page' : undefined} onClick={() => setSection('calendar')}><Icon name="calendar" /> <span>Learning calendar</span><span className="nav-count">{activityStats.currentStreak ? `${activityStats.currentStreak}d` : ''}</span></button>
-          <button title="Progress dashboard" aria-label="Progress dashboard" className={section === 'dashboard' ? 'active' : ''} aria-current={section === 'dashboard' ? 'page' : undefined} onClick={() => setSection('dashboard')}><span className="nav-symbol">↗</span><span>Progress</span></button>
+          <button title="My notebook" aria-label="My notebook" className={section === 'home' ? 'active' : ''} onClick={() => { setSection('home'); setNavOpen(false) }}><Icon name="home" /> <span>My notebook</span><span className="nav-count">{pageCount}</span></button>
+          <button title="Favorites" aria-label="Favorites" className={section === 'favorites' ? 'active' : ''} aria-current={section === 'favorites' ? 'page' : undefined} onClick={() => { setSection('favorites'); setNavOpen(false) }}><span className="nav-symbol">♡</span><span>Favorites</span></button>
+          <button title="Daily review" aria-label="Daily review" className={section === 'review' ? 'active' : ''} aria-current={section === 'review' ? 'page' : undefined} onClick={() => { setSection('review'); setNavOpen(false) }}><Icon name="cards" /> <span>Daily review</span><span className="nav-count">{reviewCards.length}</span></button>
+          <button title="Grammar guide" aria-label="Grammar guide" className={section === 'grammar' ? 'active' : ''} aria-current={section === 'grammar' ? 'page' : undefined} onClick={() => { setSection('grammar'); setNavOpen(false) }}><span className="nav-symbol">Aa</span><span>Grammar guide</span><span className="nav-count">{grammarLessons.concat(generatedLessons).filter((lesson) => grammarProgress[lesson.id]?.completed).length}/{grammarLessons.length + generatedLessons.length}</span></button>
+          <button title="Learning calendar" aria-label="Learning calendar" className={section === 'calendar' ? 'active' : ''} aria-current={section === 'calendar' ? 'page' : undefined} onClick={() => { setSection('calendar'); setNavOpen(false) }}><Icon name="calendar" /> <span>Learning calendar</span><span className="nav-count">{activityStats.currentStreak ? `${activityStats.currentStreak}d` : ''}</span></button>
+          <button title="Progress dashboard" aria-label="Progress dashboard" className={section === 'dashboard' ? 'active' : ''} aria-current={section === 'dashboard' ? 'page' : undefined} onClick={() => { setSection('dashboard'); setNavOpen(false) }}><span className="nav-symbol">↗</span><span>Progress</span></button>
           <div className="sidebar-label category-label">COLLECT BY TYPE</div>
           {vocabularyCategories.map((category) => (
             <button
@@ -2433,7 +2454,7 @@ function App() {
               aria-label={category.label}
               aria-current={section === category.id ? 'page' : undefined}
               className={section === category.id ? 'active' : ''}
-              onClick={() => setSection(category.id)}
+              onClick={() => { setSection(category.id); setNavOpen(false) }}
             >
               <Icon name={category.icon} />
               <span>{category.label}</span>
@@ -2441,8 +2462,8 @@ function App() {
             </button>
           ))}
           <div className="sidebar-label category-label">NOTEBOOK TOOLS</div>
-          <button title="Recycle bin" aria-label="Recycle bin" className={section === 'trash' ? 'active' : ''} aria-current={section === 'trash' ? 'page' : undefined} onClick={() => { setTrashLoading(true); setTrashError(''); if (section === 'trash') refreshTrash().catch((loadError) => setTrashError(loadError.message)); else setSection('trash') }}><span className="nav-symbol">♲</span><span>Recycle bin</span><span className="nav-count">{trashEntries.length || ''}</span></button>
-          <button title="Notebook settings" aria-label="Notebook settings" className={section === 'settings' ? 'active' : ''} aria-current={section === 'settings' ? 'page' : undefined} onClick={() => setSection('settings')}><span className="nav-symbol">⚙</span><span>Settings &amp; backup</span></button>
+          <button title="Recycle bin" aria-label="Recycle bin" className={section === 'trash' ? 'active' : ''} aria-current={section === 'trash' ? 'page' : undefined} onClick={() => { setNavOpen(false); setTrashLoading(true); setTrashError(''); if (section === 'trash') refreshTrash().catch((loadError) => setTrashError(loadError.message)); else setSection('trash') }}><span className="nav-symbol">♲</span><span>Recycle bin</span><span className="nav-count">{trashEntries.length || ''}</span></button>
+          <button title="Notebook settings" aria-label="Notebook settings" className={section === 'settings' ? 'active' : ''} aria-current={section === 'settings' ? 'page' : undefined} onClick={() => { setSection('settings'); setNavOpen(false) }}><span className="nav-symbol">⚙</span><span>Settings &amp; backup</span></button>
         </nav>
         <div className="sidebar-bottom">
           <div className="daily-card">
@@ -2457,6 +2478,9 @@ function App() {
 
       <main className="main-area">
         <header className="topbar">
+          <button type="button" className="mobile-menu-button" aria-label={navOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={navOpen} onClick={() => setNavOpen((open) => !open)}>
+            <Icon name={navOpen ? 'close' : 'menu'} size={22} />
+          </button>
           <div className="breadcrumb">My space <span>/</span> <strong>{breadcrumbTitle}</strong></div>
           <div className="topbar-right">
             <label className="search-box"><Icon name="search" size={18} /><input ref={searchInputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a word or page…" aria-label="Search notebook" /><kbd>⌘ K</kbd></label>
@@ -2546,6 +2570,23 @@ function App() {
               <div><span className="section-kicker">{activeCategory ? `${activeCategoryCount} ${activeCategoryCount === 1 ? activeCategorySingular : activeCategory.label.toLowerCase()} SAVED` : 'A COLLECTION IN PROGRESS'}</span><h2>{sectionTitle} <span>✿</span></h2></div>
               {section !== 'favorites' && <button className="text-button" onClick={activeCategory ? () => document.getElementById('category-entry-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }) : openNewEntry}>{activeCategory ? `Add ${activeCategorySingular}` : 'New page'} <Icon name="arrow" size={16} /></button>}
             </div>
+            {(section === 'home' || section === 'favorites' || activeCategory) && (
+              <div className="mobile-collection-tabs" role="tablist" aria-label="Your collections">
+                <button type="button" role="tab" aria-selected={section === 'home'} className={section === 'home' ? 'active' : ''} onClick={() => { setSection('home'); setQuery('') }}>All pages <span>{pageCount}</span></button>
+                {vocabularyCategories.map((category) => (
+                  <button
+                    type="button"
+                    role="tab"
+                    key={category.id}
+                    aria-selected={section === category.id}
+                    className={section === category.id ? 'active' : ''}
+                    onClick={() => { setSection(category.id); setQuery(''); setTagFilter(''); setDifficultyFilter(''); setNavOpen(false) }}
+                  >
+                    {category.label} <span>{categoryCounts[category.id] || 0}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {!loading && (
               <div className="entry-filters">
                 <label>Tag<select aria-label="Filter by tag" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}><option value="">All tags</option>{allTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}</select></label>
