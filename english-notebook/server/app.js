@@ -102,9 +102,6 @@ app.use((error, req, res, next) => {
     return res.status(400).json({ message: error.message })
   }
   console.error('API error:', error.message)
-  if (req.query.debug === '1') {
-    return res.status(500).json({ message: error.message, name: error.name, stack: error.stack?.split('\n').slice(0, 3) })
-  }
   res.status(500).json({ message: 'Something went wrong while handling that request.' })
 })
 
