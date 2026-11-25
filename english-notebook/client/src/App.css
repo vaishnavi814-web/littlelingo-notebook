@@ -1155,6 +1155,7 @@ button {
 .notebook-view-favorite { color: #9c6977; }
 .notebook-view-favorite.is-favorite { color: #b65f78; background: #fff3f4 !important; }
 .notebook-view-edit { color: #fff; border-color: #ad687d !important; background: #ad687d !important; }
+.notebook-view-delete { color: #fff; border-color: #b45f6f !important; background: #b45f6f !important; }
 .notebook-open-book {
   position: relative;
   min-height: 0;
@@ -2009,9 +2010,13 @@ button {
 .nav-symbol { width: 20px; flex: none; color: #b77986; font-size: 23px; line-height: 1; text-align: center; }
 .entry-card-shell { position: relative; min-width: 0; }
 .entry-card-shell > .entry-card { width: 100%; height: 100%; }
-.entry-favorite-button { position: absolute; top: 10px; right: 12px; z-index: 1; width: 26px; height: 26px; display: grid; place-items: center; color: #ba8290; border: 1px solid #f1e4e2; border-radius: 50%; background: #fffdf9e8; font-size: 19px; }
+.entry-card-actions { position: absolute; top: 10px; right: 12px; z-index: 2; display: flex; align-items: center; gap: 5px; }
+.entry-card-action { width: 26px; height: 26px; display: grid; place-items: center; padding: 0; color: #6f625f; border: 1px solid #eee2dd; border-radius: 50%; background: #fffdf9e8; font-size: 14px; line-height: 1; cursor: pointer; transition: transform 160ms ease, color 160ms ease, background 160ms ease; }
+.entry-card-action:hover { transform: translateY(-1px); color: #8f4f60; background: #fff4f3; }
+.entry-card-action.entry-card-delete:hover { color: #a33f4f; background: #ffeef0; }
+.entry-favorite-button { color: #ba8290; font-size: 19px; }
 .entry-favorite-button.is-favorite { color: #bd6177; background: #fff2f3; }
-.entry-card-shell .entry-topline { padding-right: 28px; }
+.entry-card-shell .entry-topline { padding-right: 100px; }
 .entry-filters { display: flex; align-items: end; gap: 8px; margin: -5px 0 12px; }
 .entry-filters label,
 .entry-metadata-fields > label:not(.favorite-check) { display: grid; gap: 4px; color: var(--text-ink); font-size: 9.5px; font-weight: 750; letter-spacing: .7px; }
@@ -3182,11 +3187,19 @@ button {
     font-size: 14.5px;
   }
 
-  .entry-favorite-button {
+  .entry-card-actions {
     top: 12px;
     right: 12px;
+    gap: 7px;
+  }
+
+  .entry-card-action {
     width: 34px;
     height: 34px;
+    font-size: 17px;
+  }
+
+  .entry-favorite-button {
     font-size: 21.5px;
   }
 

@@ -2151,9 +2151,11 @@ function App() {
   useEffect(() => {
     if (section !== 'trash') return
     let active = true
+    setTrashLoading(true)
+    setTrashError('')
     storage.getTrash()
-      .then((items) => { if (active) setTrashEntries(items) })
-      .catch((loadError) => { if (active) setTrashError(loadError.message) })
+      .then((items) => { if (active) setTrashEntries(items || []) })
+      .catch((loadError) => { if (active) setTrashError(loadError.message || 'Could not load the recycle bin.') })
       .finally(() => { if (active) setTrashLoading(false) })
     return () => { active = false }
   }, [section])
@@ -2189,7 +2191,18 @@ function App() {
   }
 
   const refreshTrash = async () => {
-    setTrashEntries(await storage.getTrash())
+    setTrashLoading(true)
+    setTrashError('')
+    try {
+      const items = await storage.getTrash()
+      setTrashEntries(items || [])
+      return items || []
+    } catch (loadError) {
+      setTrashError(loadError.message || 'Could not load the recycle bin.')
+      return []
+    } finally {
+      setTrashLoading(false)
+    }
   }
 
   const recordGrammarAttempt = (lessonId, score) => {
@@ -2270,25 +2283,30 @@ function App() {
   }
 
   const restoreEntry = async (entry) => {
+    setTrashError('')
     try {
       const updated = await storage.restore(entry._id)
       if (!updated) throw new Error('Page not found.')
-      setEntries((current) => [updated, ...current])
+      setEntries((current) => [updated, ...current.filter((item) => item._id !== updated._id)])
       await refreshTrash()
       setNotice('Your page is back in the notebook.')
+      window.setTimeout(() => setNotice(''), 3000)
     } catch (restoreError) {
-      setTrashError(restoreError.message)
+      setTrashError(restoreError.message || 'Could not restore that page.')
     }
   }
 
   const permanentlyDeleteEntry = async (entry) => {
     if (!window.confirm(`Permanently delete "${entry.title}"? This cannot be undone.`)) return
+    setTrashError('')
     try {
       const ok = await storage.permanentDelete(entry._id)
       if (!ok) throw new Error('Page not found.')
-      setTrashEntries((current) => current.filter((item) => item._id !== entry._id))
+      await refreshTrash()
+      setNotice('That page was permanently deleted.')
+      window.setTimeout(() => setNotice(''), 3000)
     } catch (deleteError) {
-      setTrashError(deleteError.message)
+      setTrashError(deleteError.message || 'Could not delete that page.')
     }
   }
 
@@ -2434,6 +2452,16 @@ function App() {
     setViewingEntryId(entry._id)
   }
 
+  const editEntry = (entry) => {
+    if (!entry?._id) return
+    setForm({ ...emptyEntry(), ...entry, vocabulary: (entry.vocabulary || []).map((item) => ({ ...item })) })
+    setVocabularyForm(emptyVocabularyForm(activeCategory?.id || 'word'))
+    setEditingVocabularyIndex(null)
+    setViewingEntryId(null)
+    setError('')
+    setEditorOpen(true)
+  }
+
   const editViewedEntry = () => {
     const entry = entries.find((item) => item._id === viewingEntryId)
     if (!entry) {
@@ -2441,11 +2469,7 @@ function App() {
       setError('This notebook page is no longer available.')
       return
     }
-    setForm({ ...emptyEntry(), ...entry, vocabulary: entry.vocabulary || [] })
-    setVocabularyForm(emptyVocabularyForm(activeCategory?.id || 'word'))
-    setEditingVocabularyIndex(null)
-    setViewingEntryId(null)
-    setEditorOpen(true)
+    editEntry(entry)
   }
 
   const openCategoryItemEditor = (entry, itemIndex, item) => {
@@ -2553,20 +2577,23 @@ function App() {
     }
   }
 
-  const deleteEntry = async () => {
-    if (!form._id || !window.confirm('Move this notebook page to the recycle bin? You can restore it later.')) return
+  const moveEntryToTrash = async (entry) => {
+    if (!entry?._id || !window.confirm(`Move "${entry.title || 'this page'}" to the recycle bin? You can restore it later.`)) return
     try {
-      const trashed = await storage.softDelete(form._id)
+      const trashed = await storage.softDelete(entry._id)
       if (!trashed) throw new Error('Page not found.')
-      setEntries((current) => current.filter((entry) => entry._id !== form._id))
-      setTrashEntries((current) => [trashed, ...current])
-      setEditorOpen(false)
+      setEntries((current) => current.filter((item) => item._id !== entry._id))
+      setTrashEntries((current) => [trashed, ...current.filter((item) => item._id !== entry._id)])
+      setViewingEntryId((current) => (current === entry._id ? null : current))
+      if (form._id === entry._id) setEditorOpen(false)
       setNotice('Page moved to the recycle bin.')
       window.setTimeout(() => setNotice(''), 3000)
     } catch (deleteError) {
-      setError(deleteError.message)
+      setError(deleteError.message || 'Could not move that page to the recycle bin.')
     }
   }
+
+  const deleteEntry = () => (form._id ? moveEntryToTrash(form) : Promise.resolve())
 
   const addVocabulary = () => {
     if (!vocabularyForm.word.trim() || !vocabularyForm.meaning.trim()) return
@@ -2649,7 +2676,7 @@ function App() {
             </button>
           ))}
           <div className="sidebar-label category-label">NOTEBOOK TOOLS</div>
-          <button title="Recycle bin" aria-label="Recycle bin" data-tone="slate" className={section === 'trash' ? 'active' : ''} aria-current={section === 'trash' ? 'page' : undefined} onClick={() => { setNavOpen(false); setTrashLoading(true); setTrashError(''); if (section === 'trash') refreshTrash().catch((loadError) => setTrashError(loadError.message)); else setSection('trash') }}><Icon name="trash" /> <span>Recycle bin</span><span className="nav-count">{trashEntries.length || ''}</span></button>
+          <button title="Recycle bin" aria-label="Recycle bin" data-tone="slate" className={section === 'trash' ? 'active' : ''} aria-current={section === 'trash' ? 'page' : undefined} onClick={() => { setNavOpen(false); if (section === 'trash') refreshTrash(); else setSection('trash') }}><Icon name="trash" /> <span>Recycle bin</span><span className="nav-count">{trashEntries.length || ''}</span></button>
           <button title="Notebook settings" aria-label="Notebook settings" data-tone="teal" className={section === 'settings' ? 'active' : ''} aria-current={section === 'settings' ? 'page' : undefined} onClick={() => { setSection('settings'); setNavOpen(false) }}><Icon name="settings" /> <span>Settings &amp; backup</span></button>
             <button title="Period tracker" aria-label="Period tracker" data-tone="pink" className={section === 'period' ? 'active' : ''} aria-current={section === 'period' ? 'page' : undefined} onClick={() => { setSection('period'); setNavOpen(false) }}><Icon name="period" /> <span>Period tracker</span><span className="nav-count">{Object.keys(periodData.days).length || ''}</span></button>
         </nav>
@@ -2699,7 +2726,7 @@ function App() {
           ) : section === 'period' ? (
             <PeriodTracker data={periodData} onChange={updatePeriodData} />
           ) : section === 'trash' ? (
-            <><RecycleBin entries={trashEntries} onRestore={restoreEntry} onDelete={permanentlyDeleteEntry} />{trashError && <p className="ai-error" role="alert">{trashError}</p>}{trashLoading && <p className="ai-status" role="status">Opening the recycle bin…</p>}</>
+            <RecycleBin entries={trashEntries} onRestore={restoreEntry} onDelete={permanentlyDeleteEntry} />
           ) : section === 'review' ? (
             <DailyReview cards={reviewCards} quizCards={sentenceQuizCards} availableWordCount={availableWordCount} scheduledCount={scheduledReviewCount} busyKey={reviewBusyKey} onRate={rateReviewCard} />
           ) : section === 'calendar' ? (
@@ -2829,7 +2856,11 @@ function App() {
                           <Icon name="arrow" size={16} />
                         </span>
                       </button>
-                      <button type="button" className={`entry-favorite-button ${entry.favorite ? 'is-favorite' : ''}`} aria-label={entry.favorite ? `Remove ${entry.title} from favorites` : `Add ${entry.title} to favorites`} onClick={() => toggleEntryFavorite(entry)}>{entry.favorite ? '♥' : '♡'}</button>
+                      <div className="entry-card-actions">
+                        <button type="button" className="entry-card-action entry-card-edit" aria-label={`Edit ${entry.title || 'this page'}`} onClick={() => editEntry(entry)}><Icon name="edit" size={14} /></button>
+                        <button type="button" className="entry-card-action entry-card-delete" aria-label={`Move ${entry.title || 'this page'} to the recycle bin`} onClick={() => moveEntryToTrash(entry)}><Icon name="trash" size={14} /></button>
+                        <button type="button" className={`entry-card-action entry-favorite-button ${entry.favorite ? 'is-favorite' : ''}`} aria-label={entry.favorite ? `Remove ${entry.title} from favorites` : `Add ${entry.title} to favorites`} onClick={() => toggleEntryFavorite(entry)}>{entry.favorite ? '♥' : '♡'}</button>
+                      </div>
                     </div>
                   )
                 })}
@@ -2865,6 +2896,7 @@ function App() {
                   <div className="notebook-view-actions">
                     <button type="button" className={`notebook-view-favorite ${entry.favorite ? 'is-favorite' : ''}`} onClick={() => toggleEntryFavorite(entry)} aria-label={entry.favorite ? 'Remove page from favorites' : 'Add page to favorites'}>{entry.favorite ? '♥' : '♡'}<span>{entry.favorite ? 'Saved' : 'Favorite'}</span></button>
                     <button type="button" className="notebook-view-edit" onClick={editViewedEntry}><Icon name="edit" size={15} /> Edit page</button>
+                    <button type="button" className="notebook-view-delete" onClick={() => moveEntryToTrash(entry)}><Icon name="trash" size={15} /> Delete</button>
                     <button type="button" className="icon-button" aria-label="Close notebook page" onClick={() => setViewingEntryId(null)}><Icon name="close" /></button>
                   </div>
                 </header>
