@@ -3,7 +3,8 @@
   --sans: 'Segoe UI', Arial, sans-serif;
   --heading: 'Segoe UI', Arial, sans-serif;
   --serif: Georgia, 'Times New Roman', serif;
-  color: #443b38;
+  color: #000000;
+  --text-ink: #000000;
   background: #fcfaf7;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -19,6 +20,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  font-size: 18px;
 }
 
 button,
