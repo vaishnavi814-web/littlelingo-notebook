@@ -2339,10 +2339,12 @@ button {
 .period-hero { border-color: #f0d7e2; background: linear-gradient(135deg, #fff5f8 0%, #fffdfb 60%, #fdf2f6 100%); }
 .period-hero .learning-hero-flower { color: #c5688c; }
 .period-hero h1 em { color: #b84f79; }
+.period-hero > p { color: var(--text-ink); }
 .period-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .period-stats article { border-color: #f3dfe8; background: #fffafb; }
 .period-stats article > span { color: #c5688c; }
 .period-stats strong { color: #8e4967; font-size: 21px; }
+.period-stats small { color: var(--text-ink); }
 .period-layout { margin-top: 17px; }
 .period-calendar { border-color: #f3dfe8; background: #fffafb; }
 .period-grid { gap: 5px; }
