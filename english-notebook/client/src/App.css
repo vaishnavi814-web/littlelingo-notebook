@@ -141,6 +141,7 @@ button {
 .side-nav button[data-tone='amber'] { --nav-accent: #dfb269; --nav-ink: #a5803f; --nav-tint: #fbf3e4; }
 .side-nav button[data-tone='teal'] { --nav-accent: #71b3ab; --nav-ink: #4d8b84; --nav-tint: #e9f6f3; }
 .side-nav button[data-tone='slate'] { --nav-accent: #9aa5b4; --nav-ink: #6e7a8a; --nav-tint: #eef1f5; }
+.side-nav button[data-tone='pink'] { --nav-accent: #d9648f; --nav-ink: #b84f79; --nav-tint: #fdeef4; }
 
 .side-nav button:hover {
   color: var(--nav-ink);
@@ -233,6 +234,7 @@ button {
 .theme-midnight .side-nav button[data-tone='amber'] { --nav-accent: #e7c283; --nav-ink: #f1dcb1; --nav-tint: #4e4533; }
 .theme-midnight .side-nav button[data-tone='teal'] { --nav-accent: #9ad3cb; --nav-ink: #c7e7e1; --nav-tint: #344e4b; }
 .theme-midnight .side-nav button[data-tone='slate'] { --nav-accent: #b6c0cd; --nav-ink: #d7dee7; --nav-tint: #414751; }
+.theme-midnight .side-nav button[data-tone='pink'] { --nav-accent: #ef9fc0; --nav-ink: #f6c9dc; --nav-tint: #4b3546; }
 .theme-midnight .side-nav button:hover,
 .theme-midnight .side-nav button.active {
   color: var(--nav-ink);
@@ -2331,6 +2333,65 @@ button {
 .calendar-legend { display: flex; justify-content: space-between; gap: 8px; margin-top: 11px; padding-top: 10px; color: var(--text-ink); border-top: 1px solid #f1eae2; font-size: 9.5px; }
 .calendar-legend i { margin-right: 3px; color: #bd7d83; font-style: normal; }
 .calendar-day-detail h2 { margin: 7px 0 15px; font-size: 20.5px; }
+
+/* Period tracker: a private little calendar at the end of the sidebar. */
+.period-page { margin-top: 25px; }
+.period-hero { border-color: #f0d7e2; background: linear-gradient(135deg, #fff5f8 0%, #fffdfb 60%, #fdf2f6 100%); }
+.period-hero .learning-hero-flower { color: #c5688c; }
+.period-hero h1 em { color: #b84f79; }
+.period-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.period-stats article { border-color: #f3dfe8; background: #fffafb; }
+.period-stats article > span { color: #c5688c; }
+.period-stats strong { color: #8e4967; font-size: 21px; }
+.period-layout { margin-top: 17px; }
+.period-calendar { border-color: #f3dfe8; background: #fffafb; }
+.period-grid { gap: 5px; }
+.period-grid .calendar-day { min-height: 52px; border-radius: 10px; font-size: 13px; }
+.period-grid .calendar-day:hover { background: #fdf0f5; }
+.period-grid .calendar-day.is-today { border-color: #d98caa; }
+.period-grid .calendar-day.is-selected { color: #a84a70; background: #fde7ef; box-shadow: inset 0 0 0 1px #d98caa; }
+.period-grid .calendar-day.is-period { color: #fff; border-color: #c65f86; background: #c65f86; }
+.period-grid .calendar-day.is-period i { color: #ffe6ee; font-size: 9.5px; }
+.period-grid .calendar-day.is-period.is-selected { background: #b84f79; }
+.period-grid .calendar-day.is-estimated { color: #a84a70; border: 1px dashed #dc8fab; background: #fff4f8; }
+.period-legend { color: var(--text-ink); border-color: #f3dfe8; font-size: 11px; }
+.period-key { display: inline-grid; width: 12px; height: 12px; place-items: center; margin-right: 3px; font-size: 9px; font-style: normal; }
+.period-key-period { color: #fff; border-radius: 4px; background: #c65f86; }
+.period-key-estimated { border: 1px dashed #c65f86; border-radius: 4px; background: #fff4f8; }
+.period-detail { border-color: #f3dfe8; background: #fffafb; }
+.period-detail h2 { margin: 7px 0 14px; font-size: 20.5px; }
+.period-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 12px; color: #a84a70; border: 1px solid #e7b7c9; border-radius: 9px; background: #fff; font-size: 12px; font-weight: 700; }
+.period-toggle:hover { background: #fdeef4; transform: translateY(-1px); }
+.period-toggle.is-on { color: #fff; border-color: #c65f86; background: #c65f86; }
+.period-note,
+.period-cycle-input { display: grid; gap: 6px; margin-top: 16px; color: var(--text-ink); font-size: 12px; font-weight: 700; }
+.period-note small { font-weight: 500; }
+.period-note textarea { width: 100%; padding: 9px 10px; color: #000000; border: 1px solid #eedde5; border-radius: 8px; background: #fff; font-size: 12px; resize: vertical; }
+.period-cycle-input > div { display: flex; align-items: center; gap: 8px; }
+.period-cycle-input input { width: 72px; padding: 7px 8px; color: #000000; border: 1px solid #eedde5; border-radius: 8px; background: #fff; font-size: 12px; }
+.period-cycle-input > div > span { color: var(--text-ink); font-size: 12px; font-weight: 500; }
+.period-privacy { margin: 16px 0 0; color: var(--text-ink); font-size: 11px; line-height: 1.5; }
+
+.theme-midnight .period-hero { border-color: #4a4650; background: #35343e; }
+.theme-midnight .period-hero h1 em,
+.theme-midnight .period-stats strong { color: #f0c2d0; }
+.theme-midnight .period-stats article,
+.theme-midnight .period-calendar,
+.theme-midnight .period-detail { border-color: #4a4650; background: #35343e; }
+.theme-midnight .period-grid .calendar-day:hover,
+.theme-midnight .period-grid .calendar-day.is-selected { color: #f0c2d0; background: #4a3c4b; }
+.theme-midnight .period-grid .calendar-day.is-period { color: #262630; border-color: #ef9fc0; background: #ef9fc0; }
+.theme-midnight .period-grid .calendar-day.is-period i { color: #4a2b3a; }
+.theme-midnight .period-grid .calendar-day.is-estimated { color: #f0c2d0; border-color: #ef9fc0; background: #43323f; }
+.theme-midnight .period-toggle { color: #f0c2d0; border-color: #6b4b5c; background: #302f39; }
+.theme-midnight .period-toggle.is-on { color: #262630; border-color: #ef9fc0; background: #ef9fc0; }
+.theme-midnight .period-note textarea,
+.theme-midnight .period-cycle-input input { color: #000000; border-color: #554f5b; background: #fff; }
+
+@media (max-width: 760px) {
+  .period-grid .calendar-day { min-height: 44px; font-size: 12px; }
+  .period-legend { flex-wrap: wrap; }
+}
 .calendar-entry-list { display: grid; gap: 7px; }
 .calendar-entry-list button { display: flex; align-items: center; gap: 9px; padding: 9px; color: #a66577; text-align: left; border: 1px solid #f0e7de; border-radius: 9px; background: #fffaf7; }
 .calendar-entry-list button > span:first-child { font-size: 18px; }

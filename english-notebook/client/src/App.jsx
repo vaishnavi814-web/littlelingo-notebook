@@ -5,6 +5,11 @@ import { extractSubtitleText, loadGeneratedLessons } from './lessonSources'
 import { storage } from './storage'
 
 const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+const parseDay = (key) => {
+  const [year, month, day] = key.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+const shiftDay = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
 const today = () => dateKey(new Date())
 const initialCalendarMonth = new Date()
 const hasLocalDraft = () => {
@@ -28,6 +33,23 @@ const loadGrammarProgress = () => {
       }]))
   } catch {
     return {}
+  }
+}
+
+const loadPeriodData = () => {
+  try {
+    const stored = JSON.parse(localStorage.getItem('littlelingo-period') || '{}')
+    const days = stored && stored.days && typeof stored.days === 'object' && !Array.isArray(stored.days)
+      ? Object.fromEntries(Object.entries(stored.days)
+        .filter(([key, value]) => /^\d{4}-\d{2}-\d{2}$/.test(key) && value && typeof value === 'object' && !Array.isArray(value))
+        .map(([key, value]) => [key, { note: typeof value.note === 'string' ? value.note.slice(0, 200) : '' }]))
+      : {}
+    const cycleLength = stored && Number.isInteger(stored.cycleLength) && stored.cycleLength >= 20 && stored.cycleLength <= 45
+      ? stored.cycleLength
+      : 28
+    return { days, cycleLength }
+  } catch {
+    return { days: {}, cycleLength: 28 }
   }
 }
 
@@ -729,6 +751,133 @@ function LearningCalendar({ entries, stats, openEntry }) {
   )
 }
 
+function PeriodTracker({ data, onChange }) {
+  const [month, setMonth] = useState(() => new Date(initialCalendarMonth.getFullYear(), initialCalendarMonth.getMonth(), 1))
+  const [selectedDate, setSelectedDate] = useState(() => today())
+  const firstWeekday = new Date(month.getFullYear(), month.getMonth(), 1).getDay()
+  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
+  const changeMonth = (offset) => {
+    const nextMonth = new Date(month.getFullYear(), month.getMonth() + offset, 1)
+    setMonth(nextMonth)
+    setSelectedDate(dateKey(nextMonth))
+  }
+
+  const periodDays = Object.keys(data.days).sort()
+  const starts = []
+  let previousDay = null
+  for (const key of periodDays) {
+    const gap = previousDay ? Math.round((parseDay(key) - parseDay(previousDay)) / 86400000) : 0
+    if (!previousDay || gap > 1) starts.push(key)
+    previousDay = key
+  }
+  const cycleLengths = starts.slice(1).map((key, index) => Math.round((parseDay(key) - parseDay(starts[index])) / 86400000))
+  const averageCycle = cycleLengths.length
+    ? Math.round(cycleLengths.reduce((sum, length) => sum + length, 0) / cycleLengths.length)
+    : null
+  const lastStart = starts[starts.length - 1] || null
+  const nextStart = lastStart ? shiftDay(parseDay(lastStart), data.cycleLength) : null
+  const todayKey = today()
+  const estimatedWindow = new Set()
+  if (nextStart) {
+    for (let offset = 0; offset < 5; offset += 1) {
+      const key = dateKey(shiftDay(nextStart, offset))
+      if (key >= todayKey) estimatedWindow.add(key)
+    }
+  }
+  const cycleDay = lastStart ? Math.round((new Date() - parseDay(lastStart)) / 86400000) + 1 : null
+  const shortDay = (key) => parseDay(key).toLocaleDateString('en', { month: 'short', day: 'numeric' })
+  const selectedInfo = data.days[selectedDate]
+  const toggleSelectedDay = () => {
+    const days = { ...data.days }
+    if (days[selectedDate]) delete days[selectedDate]
+    else days[selectedDate] = { note: '' }
+    onChange({ ...data, days })
+  }
+  const updateNote = (note) => {
+    if (!data.days[selectedDate]) return
+    onChange({ ...data, days: { ...data.days, [selectedDate]: { note: note.slice(0, 200) } } })
+  }
+  const updateCycleLength = (value) => {
+    const length = Number(value)
+    if (Number.isInteger(length) && length >= 20 && length <= 45) onChange({ ...data, cycleLength: length })
+  }
+
+  return (
+    <section className="learning-page period-page">
+      <header className="learning-page-hero period-hero">
+        <span className="learning-hero-flower" aria-hidden="true">❀</span>
+        <span className="eyebrow"><span className="eyebrow-dot" /> A LITTLE CARE FOR YOU</span>
+        <h1>Your cycle<em> at a glance.</em></h1>
+        <p>Mark the days you’re on your period. The calendar quietly estimates what comes next, using your own rhythm.</p>
+      </header>
+
+      <div className="dashboard-stat-grid period-stats" aria-label="Cycle summary">
+        <article><span>✿</span><strong>{cycleDay ? `Day ${cycleDay}` : '—'}</strong><small>of your current cycle</small></article>
+        <article><span>◷</span><strong>{averageCycle ? `${averageCycle}d` : '—'}</strong><small>average cycle from your logs</small></article>
+        <article><span>♡</span><strong>{lastStart ? shortDay(lastStart) : '—'}</strong><small>last period start</small></article>
+        <article><span>✧</span><strong>{nextStart ? shortDay(dateKey(nextStart)) : '—'}</strong><small>estimated next start</small></article>
+      </div>
+
+      <div className="activity-layout period-layout">
+        <section className="activity-calendar period-calendar" aria-label="Period tracker calendar">
+          <div className="calendar-heading">
+            <div><span className="section-kicker">MARK YOUR DAYS</span><h2>{month.toLocaleDateString('en', { month: 'long', year: 'numeric' })}</h2></div>
+            <div className="calendar-month-controls">
+              <button type="button" aria-label="Previous month" onClick={() => changeMonth(-1)}>‹</button>
+              <button type="button" aria-label="Next month" onClick={() => changeMonth(1)}>›</button>
+            </div>
+          </div>
+          <div className="calendar-grid period-grid" role="group" aria-label={`${month.toLocaleDateString('en', { month: 'long', year: 'numeric' })} period calendar`}>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => <span className="calendar-weekday" key={day}>{day}</span>)}
+            {Array.from({ length: firstWeekday }, (_, index) => <span className="calendar-blank" aria-hidden="true" key={`blank-${index}`} />)}
+            {Array.from({ length: daysInMonth }, (_, index) => {
+              const key = dateKey(new Date(month.getFullYear(), month.getMonth(), index + 1))
+              const isPeriod = Boolean(data.days[key])
+              const isEstimated = !isPeriod && estimatedWindow.has(key)
+              return (
+                <button
+                  type="button"
+                  key={key}
+                  aria-label={`${formatDate(key)}${isPeriod ? ', period day' : isEstimated ? ', estimated period day' : ', no period day'}`}
+                  aria-pressed={isPeriod}
+                  className={`calendar-day period-day ${isPeriod ? 'is-period' : ''} ${isEstimated ? 'is-estimated' : ''} ${key === todayKey ? 'is-today' : ''} ${selectedDate === key ? 'is-selected' : ''}`}
+                  onClick={() => setSelectedDate(key)}
+                >
+                  <span>{index + 1}</span>{isPeriod && <i aria-hidden="true">♥</i>}
+                </button>
+              )
+            })}
+          </div>
+          <div className="calendar-legend period-legend">
+            <span><i className="period-key period-key-period">♥</i> Period day</span>
+            <span><i className="period-key period-key-estimated" /> Estimated window</span>
+            <span>{periodDays.length} day{periodDays.length === 1 ? '' : 's'} tracked</span>
+          </div>
+        </section>
+
+        <aside className="calendar-day-detail period-detail">
+          <span className="section-kicker">THIS DAY</span>
+          <h2>{formatDate(selectedDate)}</h2>
+          <button type="button" className={`period-toggle ${selectedInfo ? 'is-on' : ''}`} onClick={toggleSelectedDay}>
+            <Icon name="heart" size={16} /> {selectedInfo ? 'Remove period day' : 'Mark as period day'}
+          </button>
+          {selectedInfo && (
+            <label className="period-note">
+              <span>Notes <small>(optional)</small></span>
+              <textarea rows={3} maxLength={200} value={selectedInfo.note || ''} onChange={(event) => updateNote(event.target.value)} placeholder="How are you feeling?" />
+            </label>
+          )}
+          <label className="period-cycle-input">
+            <span>Usual cycle length</span>
+            <div><input type="number" min="20" max="45" value={data.cycleLength} onChange={(event) => updateCycleLength(event.target.value)} /><span>days</span></div>
+          </label>
+          <p className="period-privacy">Saved only in this browser. Nothing is uploaded.</p>
+        </aside>
+      </div>
+    </section>
+  )
+}
+
 function ProgressDashboard({ entries, stats, now }) {
   const allWords = entries.flatMap((entry) => entry.vocabulary || [])
   const reviewedWords = allWords.filter((item) => (item.reviewTotal || 0) > 0).length
@@ -1378,6 +1527,7 @@ function Icon({ name, size = 20 }) {
     calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18m-13 4h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" /></>,
     menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
     heart: <path d="M20.8 5.1a5.4 5.4 0 0 0-7.6 0L12 6.3l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.3a5.4 5.4 0 0 0 0-7.6Z" />,
+    period: <><path d="M12 3s6 6.4 6 10.4a6 6 0 0 1-12 0C6 9.4 12 3 12 3Z" /><path d="M9 14.4a3 3 0 0 0 3 3" /></>,
     chart: <><path d="M4 20V11M10 20V5M16 20v-7M22 20H2" /></>,
     settings: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9 7 7m10 10 2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" /></>,
   }
@@ -1897,6 +2047,15 @@ function App() {
   const [reviewClock, setReviewClock] = useState(() => Date.now())
   const [youglishWord, setYouglishWord] = useState('')
   const [grammarProgress, setGrammarProgress] = useState(loadGrammarProgress)
+  const [periodData, setPeriodData] = useState(loadPeriodData)
+  const updatePeriodData = useCallback((next) => {
+    setPeriodData(next)
+    try {
+      localStorage.setItem('littlelingo-period', JSON.stringify(next))
+    } catch {
+      // Browsers in private mode can refuse storage; the view still works for this session.
+    }
+  }, [])
   const [generatedLessons, setGeneratedLessons] = useState(loadGeneratedLessons)
   const [draftStatus, setDraftStatus] = useState('saved')
   const [draftRecoveryAvailable, setDraftRecoveryAvailable] = useState(hasLocalDraft)
@@ -2418,7 +2577,7 @@ function App() {
   const sectionTitle = activeCategory ? `Your ${activeCategory.label.toLowerCase()}` : section === 'favorites' ? 'Your favorites' : 'Your notebook'
   const breadcrumbTitle = activeCategory?.label || ({
     review: 'Daily review', calendar: 'Learning calendar', favorites: 'Favorites',
-    dashboard: 'Progress dashboard', grammar: 'Grammar guide', trash: 'Recycle bin', settings: 'Notebook settings',
+    dashboard: 'Progress dashboard', grammar: 'Grammar guide', trash: 'Recycle bin', settings: 'Notebook settings', period: 'Period tracker',
   }[section] || 'Notebook')
   const shortcutHelp = [
     { keys: 'Ctrl / ⌘ + K', label: 'Focus notebook search' },
@@ -2479,6 +2638,7 @@ function App() {
           <div className="sidebar-label category-label">NOTEBOOK TOOLS</div>
           <button title="Recycle bin" aria-label="Recycle bin" data-tone="slate" className={section === 'trash' ? 'active' : ''} aria-current={section === 'trash' ? 'page' : undefined} onClick={() => { setNavOpen(false); setTrashLoading(true); setTrashError(''); if (section === 'trash') refreshTrash().catch((loadError) => setTrashError(loadError.message)); else setSection('trash') }}><Icon name="trash" /> <span>Recycle bin</span><span className="nav-count">{trashEntries.length || ''}</span></button>
           <button title="Notebook settings" aria-label="Notebook settings" data-tone="teal" className={section === 'settings' ? 'active' : ''} aria-current={section === 'settings' ? 'page' : undefined} onClick={() => { setSection('settings'); setNavOpen(false) }}><Icon name="settings" /> <span>Settings &amp; backup</span></button>
+            <button title="Period tracker" aria-label="Period tracker" data-tone="pink" className={section === 'period' ? 'active' : ''} aria-current={section === 'period' ? 'page' : undefined} onClick={() => { setSection('period'); setNavOpen(false) }}><Icon name="period" /> <span>Period tracker</span><span className="nav-count">{Object.keys(periodData.days).length || ''}</span></button>
         </nav>
         <button type="button" className="sidebar-toggle" onClick={toggleSidebar} aria-expanded={sidebarIsOpen} aria-label={sidebarIsOpen ? 'Close navigation menu' : 'Open navigation menu'}>
           <Icon name="menu" size={18} />
@@ -2523,6 +2683,8 @@ function App() {
             <ProgressDashboard entries={entries} stats={activityStats} now={reviewClock} />
           ) : section === 'settings' ? (
             <NotebookSettings preferences={preferences} setPreferences={setPreferences} onExportJson={exportJson} onExportHtml={exportHtml} onExportPdf={exportPdf} shortcutHelp={shortcutHelp} />
+          ) : section === 'period' ? (
+            <PeriodTracker data={periodData} onChange={updatePeriodData} />
           ) : section === 'trash' ? (
             <><RecycleBin entries={trashEntries} onRestore={restoreEntry} onDelete={permanentlyDeleteEntry} />{trashError && <p className="ai-error" role="alert">{trashError}</p>}{trashLoading && <p className="ai-status" role="status">Opening the recycle bin…</p>}</>
           ) : section === 'review' ? (
