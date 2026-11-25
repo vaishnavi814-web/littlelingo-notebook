@@ -116,8 +116,9 @@ button {
 
 .side-nav button {
   --nav-accent: #d7788f;
-  --nav-ink: #b65f78;
-  --nav-tint: #f9edf0;
+  --nav-ink: var(--text-ink);
+  --nav-block: #f9edf0;
+  --nav-tint: #f6e0e7;
   min-height: 44px;
   display: flex;
   align-items: center;
@@ -127,21 +128,21 @@ button {
   text-align: left;
   border: 0;
   border-radius: 10px;
-  background: transparent;
+  background: var(--nav-block);
   font-size: 14.5px;
   font-weight: 600;
   transition: color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
 }
 
-/* Each destination gets its own colour family, not just the active state. */
-.side-nav button[data-tone='coral'] { --nav-accent: #e8896d; --nav-ink: #b9664d; --nav-tint: #fdf0eb; }
-.side-nav button[data-tone='blue'] { --nav-accent: #7ba7d4; --nav-ink: #557da9; --nav-tint: #eaf2fa; }
-.side-nav button[data-tone='green'] { --nav-accent: #8db78c; --nav-ink: #5f8560; --nav-tint: #eef6ec; }
-.side-nav button[data-tone='violet'] { --nav-accent: #a994cb; --nav-ink: #7f69a6; --nav-tint: #f3eef9; }
-.side-nav button[data-tone='amber'] { --nav-accent: #dfb269; --nav-ink: #a5803f; --nav-tint: #fbf3e4; }
-.side-nav button[data-tone='teal'] { --nav-accent: #71b3ab; --nav-ink: #4d8b84; --nav-tint: #e9f6f3; }
-.side-nav button[data-tone='slate'] { --nav-accent: #9aa5b4; --nav-ink: #6e7a8a; --nav-tint: #eef1f5; }
-.side-nav button[data-tone='pink'] { --nav-accent: #d9648f; --nav-ink: #b84f79; --nav-tint: #fdeef4; }
+/* Each destination gets its own coloured block; the label stays ink-coloured. */
+.side-nav button[data-tone='coral'] { --nav-accent: #e8896d; --nav-block: #fdf0eb; --nav-tint: #fbe1d6; }
+.side-nav button[data-tone='blue'] { --nav-accent: #7ba7d4; --nav-block: #eaf2fa; --nav-tint: #dce9f7; }
+.side-nav button[data-tone='green'] { --nav-accent: #8db78c; --nav-block: #eef6ec; --nav-tint: #dcefd9; }
+.side-nav button[data-tone='violet'] { --nav-accent: #a994cb; --nav-block: #f3eef9; --nav-tint: #e7ddf5; }
+.side-nav button[data-tone='amber'] { --nav-accent: #dfb269; --nav-block: #fbf3e4; --nav-tint: #f7e7c6; }
+.side-nav button[data-tone='teal'] { --nav-accent: #71b3ab; --nav-block: #e9f6f3; --nav-tint: #d5ede9; }
+.side-nav button[data-tone='slate'] { --nav-accent: #9aa5b4; --nav-block: #eef1f5; --nav-tint: #e1e7ee; }
+.side-nav button[data-tone='pink'] { --nav-accent: #d9648f; --nav-block: #fdeef4; --nav-tint: #f9dce8; }
 
 .side-nav button:hover {
   color: var(--nav-ink);
@@ -225,16 +226,17 @@ button {
   transition: transform .18s ease;
 }
 
-/* Keep the colour coding legible on the dark theme too. */
-.theme-midnight .side-nav button[data-tone='rose'] { --nav-accent: #e6a0b4; --nav-ink: #f0c2d0; --nav-tint: #4a3c4b; }
-.theme-midnight .side-nav button[data-tone='coral'] { --nav-accent: #e9a58f; --nav-ink: #f0c5b6; --nav-tint: #503e3c; }
-.theme-midnight .side-nav button[data-tone='blue'] { --nav-accent: #9dc4f0; --nav-ink: #c5ddf6; --nav-tint: #39495c; }
-.theme-midnight .side-nav button[data-tone='green'] { --nav-accent: #a7cfa3; --nav-ink: #cde5c8; --nav-tint: #3a4c3e; }
-.theme-midnight .side-nav button[data-tone='violet'] { --nav-accent: #c0ade3; --nav-ink: #dccff0; --nav-tint: #433c56; }
-.theme-midnight .side-nav button[data-tone='amber'] { --nav-accent: #e7c283; --nav-ink: #f1dcb1; --nav-tint: #4e4533; }
-.theme-midnight .side-nav button[data-tone='teal'] { --nav-accent: #9ad3cb; --nav-ink: #c7e7e1; --nav-tint: #344e4b; }
-.theme-midnight .side-nav button[data-tone='slate'] { --nav-accent: #b6c0cd; --nav-ink: #d7dee7; --nav-tint: #414751; }
-.theme-midnight .side-nav button[data-tone='pink'] { --nav-accent: #ef9fc0; --nav-ink: #f6c9dc; --nav-tint: #4b3546; }
+/* Keep the colour blocks legible on the dark theme too. */
+.theme-midnight .side-nav button { --nav-ink: var(--text-ink); }
+.theme-midnight .side-nav button[data-tone='rose'] { --nav-accent: #e6a0b4; --nav-block: #4a3c4b; --nav-tint: #563f4e; }
+.theme-midnight .side-nav button[data-tone='coral'] { --nav-accent: #e9a58f; --nav-block: #503e3c; --nav-tint: #5c443f; }
+.theme-midnight .side-nav button[data-tone='blue'] { --nav-accent: #9dc4f0; --nav-block: #39495c; --nav-tint: #43556b; }
+.theme-midnight .side-nav button[data-tone='green'] { --nav-accent: #a7cfa3; --nav-block: #3a4c3e; --nav-tint: #445a48; }
+.theme-midnight .side-nav button[data-tone='violet'] { --nav-accent: #c0ade3; --nav-block: #433c56; --nav-tint: #4e4663; }
+.theme-midnight .side-nav button[data-tone='amber'] { --nav-accent: #e7c283; --nav-block: #4e4533; --nav-tint: #5a503b; }
+.theme-midnight .side-nav button[data-tone='teal'] { --nav-accent: #9ad3cb; --nav-block: #344e4b; --nav-tint: #3d5a56; }
+.theme-midnight .side-nav button[data-tone='slate'] { --nav-accent: #b6c0cd; --nav-block: #414751; --nav-tint: #4c535e; }
+.theme-midnight .side-nav button[data-tone='pink'] { --nav-accent: #ef9fc0; --nav-block: #4b3546; --nav-tint: #583e52; }
 .theme-midnight .side-nav button:hover,
 .theme-midnight .side-nav button.active {
   color: var(--nav-ink);
@@ -3412,3 +3414,54 @@ button {
 @media (max-width: 760px) {
   .topbar > .breadcrumb { display: none; }
 }
+
+/* The active sidebar block's colour carries through its dashboard and pages. */
+.app-shell { --page-accent: #d7788f; --page-wash: #fff6f8; }
+.app-shell[data-tone='coral'] { --page-accent: #e8896d; --page-wash: #fff5f0; }
+.app-shell[data-tone='blue'] { --page-accent: #7ba7d4; --page-wash: #f2f7fd; }
+.app-shell[data-tone='green'] { --page-accent: #8db78c; --page-wash: #f3f9f2; }
+.app-shell[data-tone='violet'] { --page-accent: #a994cb; --page-wash: #f6f2fb; }
+.app-shell[data-tone='amber'] { --page-accent: #dfb269; --page-wash: #fdf8ed; }
+.app-shell[data-tone='teal'] { --page-accent: #71b3ab; --page-wash: #f0f9f7; }
+.app-shell[data-tone='slate'] { --page-accent: #9aa5b4; --page-wash: #f5f7fa; }
+.app-shell[data-tone='pink'] { --page-accent: #d9648f; --page-wash: #fff3f7; }
+
+.theme-midnight.app-shell { --page-accent: #e6a0b4; --page-wash: #35343e; }
+.theme-midnight.app-shell[data-tone='coral'] { --page-accent: #e9a58f; --page-wash: #3d3533; }
+.theme-midnight.app-shell[data-tone='blue'] { --page-accent: #9dc4f0; --page-wash: #303b49; }
+.theme-midnight.app-shell[data-tone='green'] { --page-accent: #a7cfa3; --page-wash: #313d34; }
+.theme-midnight.app-shell[data-tone='violet'] { --page-accent: #c0ade3; --page-wash: #383344; }
+.theme-midnight.app-shell[data-tone='amber'] { --page-accent: #e7c283; --page-wash: #3e382b; }
+.theme-midnight.app-shell[data-tone='teal'] { --page-accent: #9ad3cb; --page-wash: #2f3d3b; }
+.theme-midnight.app-shell[data-tone='slate'] { --page-accent: #b6c0cd; --page-wash: #333941; }
+.theme-midnight.app-shell[data-tone='pink'] { --page-accent: #ef9fc0; --page-wash: #403039; }
+
+.app-shell[data-tone] .topbar { border-bottom-color: var(--page-accent); }
+.app-shell[data-tone] .learning-page-hero,
+.app-shell[data-tone] .category-page-hero,
+.app-shell[data-tone] .welcome-panel,
+.app-shell[data-tone] .review-card,
+.app-shell[data-tone] .dashboard-activity,
+.app-shell[data-tone] .dashboard-stat-grid article,
+.app-shell[data-tone] .activity-calendar,
+.app-shell[data-tone] .calendar-day-detail,
+.app-shell[data-tone] .entry-card,
+.app-shell[data-tone] .settings-card {
+  border-color: var(--page-accent);
+  background: var(--page-wash);
+}
+.app-shell[data-tone] .learning-page-hero h1 em,
+.app-shell[data-tone] .category-page-copy h1 em,
+.app-shell[data-tone] .welcome-copy h1 em,
+.app-shell[data-tone] .dashboard-stat-grid article > span,
+.app-shell[data-tone] .dashboard-stat-grid strong { color: var(--page-accent); }
+.app-shell[data-tone] .primary-button,
+.app-shell[data-tone] .secondary-button { background: var(--page-accent); }
+.app-shell[data-tone] .primary-button:hover,
+.app-shell[data-tone] .secondary-button:hover { background: var(--page-accent); filter: brightness(.94); }
+.app-shell[data-tone] .calendar-day.is-selected { color: var(--page-accent); background: var(--page-wash); box-shadow: inset 0 0 0 1px var(--page-accent); }
+.app-shell[data-tone] .calendar-day.is-period { color: #ffffff; border-color: var(--page-accent); background: var(--page-accent); }
+.app-shell[data-tone] .calendar-day.is-estimated { color: var(--page-accent); border-color: var(--page-accent); background: var(--page-wash); }
+.theme-midnight.app-shell[data-tone] .primary-button,
+.theme-midnight.app-shell[data-tone] .secondary-button,
+.theme-midnight.app-shell[data-tone] .calendar-day.is-period { color: #262630; }

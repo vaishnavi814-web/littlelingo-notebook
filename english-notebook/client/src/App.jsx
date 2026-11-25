@@ -147,6 +147,19 @@ const vocabularyCategories = [
   { id: 'expression', label: 'Expressions', icon: 'bookOpen', tone: 'green' },
 ]
 
+const sectionTones = {
+  home: 'rose',
+  favorites: 'coral',
+  review: 'blue',
+  grammar: 'violet',
+  calendar: 'green',
+  dashboard: 'amber',
+  trash: 'slate',
+  settings: 'teal',
+  period: 'pink',
+  ...Object.fromEntries(vocabularyCategories.map((category) => [category.id, category.tone])),
+}
+
 const isPhoneLayout = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches
 
 const categoryLabel = (category) => vocabularyCategories.find((item) => item.id === category)?.label || 'Words'
@@ -2605,7 +2618,7 @@ function App() {
   }
 
   return (
-    <div className={`app-shell theme-${preferences.theme} paper-${preferences.paper} lines-${preferences.lines} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div data-tone={sectionTones[section] || 'rose'} className={`app-shell theme-${preferences.theme} paper-${preferences.paper} lines-${preferences.lines} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className={`sidebar ${navOpen ? 'sidebar-open' : ''}`}>
         <a className="brand" href="#" onClick={(event) => { event.preventDefault(); setSection('home'); setNavOpen(false) }}>
           <span className="brand-mark"><Icon name="bookOpen" size={22} /></span>
