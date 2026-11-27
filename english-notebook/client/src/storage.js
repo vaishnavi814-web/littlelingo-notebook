@@ -12,6 +12,24 @@ const REMOTE_PROBE_TTL_MS = 60 * 1000
 
 let remoteState = { available: false, checkedAt: 0, base: '' }
 
+const AUTH_TOKEN_KEY = 'littlelingo-auth-token'
+let authToken
+try {
+  authToken = localStorage.getItem(AUTH_TOKEN_KEY) || ''
+} catch {
+  authToken = ''
+}
+
+const setAuthToken = (token) => {
+  authToken = token || ''
+  try {
+    if (authToken) localStorage.setItem(AUTH_TOKEN_KEY, authToken)
+    else localStorage.removeItem(AUTH_TOKEN_KEY)
+  } catch { /* storage may be blocked; keep the in-memory token */ }
+}
+
+const clearAuthToken = () => setAuthToken('')
+
 const fetchWithTimeout = (url, options = {}) => {
   let timer
   const timeout = new Promise((_, reject) => {
@@ -47,9 +65,10 @@ const getRemoteBase = async () => {
   throw new Error('Unable to reach the backend server. Please check that the server is running.')
 }
 
-const apiFetch = async (path, { method = 'GET', json } = {}) => {
+const apiFetch = async (path, { method = 'GET', json, auth = true } = {}) => {
   const base = await getRemoteBase()
   const options = { method, headers: {} }
+  if (auth && authToken) options.headers.Authorization = `Bearer ${authToken}`
   if (json !== undefined) {
     options.headers['Content-Type'] = 'application/json'
     options.body = JSON.stringify(json)
@@ -118,4 +137,61 @@ const storage = {
   },
 }
 
-export { storage }
+const auth = {
+  me: () => apiFetch('/api/auth/me'),
+  register: async ({ username, password, displayName }) => {
+    const result = await apiFetch('/api/auth/register', {
+      method: 'POST',
+      json: { username, password, displayName },
+      auth: false,
+    })
+    if (result?.token) setAuthToken(result.token)
+    return result
+  },
+  login: async ({ username, password }) => {
+    const result = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      json: { username, password },
+      auth: false,
+    })
+    if (result?.token) setAuthToken(result.token)
+    return result
+  },
+  adminLogin: async ({ username, password }) => {
+    const result = await apiFetch('/api/auth/admin/login', {
+      method: 'POST',
+      json: { username, password },
+      auth: false,
+    })
+    if (result?.token) setAuthToken(result.token)
+    return result
+  },
+  logout: async () => {
+    try {
+      await apiFetch('/api/auth/logout', { method: 'POST' })
+    } finally {
+      clearAuthToken()
+    }
+  },
+}
+
+const chat = {
+  users: () => apiFetch('/api/users'),
+  conversations: () => apiFetch('/api/conversations'),
+  conversation: (id) => apiFetch(`/api/conversations/${id}`),
+  start: (participantId, text) => apiFetch('/api/conversations', {
+    method: 'POST',
+    json: { participantId, text },
+  }),
+  send: (id, text) => apiFetch(`/api/conversations/${id}/messages`, {
+    method: 'POST',
+    json: { text },
+  }),
+  markRead: (id) => apiFetch(`/api/conversations/${id}/read`, { method: 'PATCH' }),
+  deleteMessage: (id, index) => apiFetch(`/api/conversations/${id}/messages/${index}`, {
+    method: 'DELETE',
+  }),
+  deleteConversation: (id) => apiFetch(`/api/conversations/${id}`, { method: 'DELETE' }),
+}
+
+export { storage, auth, chat, setAuthToken, clearAuthToken }

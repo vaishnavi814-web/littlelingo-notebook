@@ -12,6 +12,8 @@ const { randomUUID } = require('crypto')
 const { init, uploadDir, getActiveName } = require('./store')
 const entriesRouter = require('./routes/entries')
 const aiRouter = require('./routes/ai')
+const authRouter = require('./routes/auth')
+const chatRouter = require('./routes/chat')
 
 const app = express()
 const publicDir = path.join(__dirname, 'public')
@@ -43,6 +45,8 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', database: database || 'disconnected' })
 })
 
+app.use('/api/auth', authRouter)
+app.use('/api', chatRouter)
 app.use('/api/entries', entriesRouter)
 app.use('/api/ai', aiRouter)
 
@@ -100,6 +104,9 @@ app.use((error, req, res, next) => {
   if (error.code === 'INVALID_IMAGE_TYPE') return res.status(400).json({ message: error.message })
   if (error.name === 'ValidationError' || error.name === 'CastError') {
     return res.status(400).json({ message: error.message })
+  }
+  if (Number.isInteger(error.status) && error.status >= 400 && error.status < 600) {
+    return res.status(error.status).json({ message: error.message })
   }
   console.error('API error:', error.message)
   res.status(500).json({ message: 'Something went wrong while handling that request.' })

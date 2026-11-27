@@ -23,6 +23,12 @@ services:
       # Fail loudly if Atlas is unreachable instead of falling back to ephemeral SQLite.
       - key: REQUIRE_MONGO
         value: "true"
+      # Single admin sign-in. Set ADMIN_PASSWORD in the Render dashboard; do not
+      # commit it here. ADMIN_PASSWORD_HASH is accepted instead of the plain value.
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
       - key: OLLAMA_MODEL
         value: llama3.2:3b
       # Point this at an Ollama instance reachable from Render.

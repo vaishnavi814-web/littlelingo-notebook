@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { grammarLessons, grammarLevels } from './grammarLessons'
 import { extractSubtitleText, loadGeneratedLessons } from './lessonSources'
-import { storage } from './storage'
+import { auth as authApi, storage } from './storage'
+import { AuthDialog, InboxPage } from './Inbox'
 
 const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 const parseDay = (key) => {
@@ -157,6 +158,7 @@ const sectionTones = {
   trash: 'slate',
   settings: 'teal',
   period: 'pink',
+  inbox: 'blue',
   ...Object.fromEntries(vocabularyCategories.map((category) => [category.id, category.tone])),
 }
 
@@ -1543,6 +1545,9 @@ function Icon({ name, size = 20 }) {
     period: <><path d="M12 3s6 6.4 6 10.4a6 6 0 0 1-12 0C6 9.4 12 3 12 3Z" /><path d="M9 14.4a3 3 0 0 0 3 3" /></>,
     chart: <><path d="M4 20V11M10 20V5M16 20v-7M22 20H2" /></>,
     settings: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9 7 7m10 10 2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" /></>,
+    mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>,
+    shield: <><path d="M12 3 5 6v6c0 4.4 2.9 7.6 7 9 4.1-1.4 7-4.6 7-9V6l-7-3Z" /><path d="m9 12 2 2 4-4" /></>,
+    logout: <><path d="M10 5H5v14h5M14 8l4 4-4 4M9 12h9" /></>,
   }
   return (
     <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -2030,6 +2035,9 @@ function App() {
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [section, setSection] = useState('home')
+  const [auth, setAuth] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
+  const [authDialogOpen, setAuthDialogOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [tagFilter, setTagFilter] = useState('')
@@ -2107,6 +2115,15 @@ function App() {
       .finally(() => {
         if (active) setLoading(false)
       })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    authApi.me()
+      .then((result) => { if (active) setAuth(result.user) })
+      .catch(() => { if (active) setAuth(null) })
+      .finally(() => { if (active) setAuthReady(true) })
     return () => { active = false }
   }, [])
 
@@ -2617,7 +2634,7 @@ function App() {
   const sectionTitle = activeCategory ? `Your ${activeCategory.label.toLowerCase()}` : section === 'favorites' ? 'Your favorites' : 'Your notebook'
   const breadcrumbTitle = activeCategory?.label || ({
     review: 'Daily review', calendar: 'Learning calendar', favorites: 'Favorites',
-    dashboard: 'Progress dashboard', grammar: 'Grammar guide', trash: 'Recycle bin', settings: 'Notebook settings', period: 'Period tracker',
+    dashboard: 'Progress dashboard', grammar: 'Grammar guide', trash: 'Recycle bin', settings: 'Notebook settings', period: 'Period tracker', inbox: 'Inbox',
   }[section] || 'Notebook')
   const shortcutHelp = [
     { keys: 'Ctrl / ⌘ + K', label: 'Focus notebook search' },
@@ -2659,6 +2676,12 @@ function App() {
           <button title="Grammar guide" aria-label="Grammar guide" data-tone="violet" className={section === 'grammar' ? 'active' : ''} aria-current={section === 'grammar' ? 'page' : undefined} onClick={() => { setSection('grammar'); setNavOpen(false) }}><Icon name="book" /> <span>Grammar guide</span><span className="nav-count">{grammarLessons.concat(generatedLessons).filter((lesson) => grammarProgress[lesson.id]?.completed).length}/{grammarLessons.length + generatedLessons.length}</span></button>
           <button title="Learning calendar" aria-label="Learning calendar" data-tone="green" className={section === 'calendar' ? 'active' : ''} aria-current={section === 'calendar' ? 'page' : undefined} onClick={() => { setSection('calendar'); setNavOpen(false) }}><Icon name="calendar" /> <span>Learning calendar</span><span className="nav-count">{activityStats.currentStreak ? `${activityStats.currentStreak}d` : ''}</span></button>
           <button title="Progress dashboard" aria-label="Progress dashboard" data-tone="amber" className={section === 'dashboard' ? 'active' : ''} aria-current={section === 'dashboard' ? 'page' : undefined} onClick={() => { setSection('dashboard'); setNavOpen(false) }}><Icon name="chart" /> <span>Progress</span></button>
+          {auth && (
+            <>
+              <div className="sidebar-label category-label">MESSAGES</div>
+              <button title={auth.role === 'admin' ? 'Admin inbox' : 'Inbox'} aria-label={auth.role === 'admin' ? 'Admin inbox' : 'Inbox'} data-tone={auth.role === 'admin' ? 'violet' : 'blue'} className={section === 'inbox' ? 'active' : ''} aria-current={section === 'inbox' ? 'page' : undefined} onClick={() => { setSection('inbox'); setNavOpen(false) }}><Icon name="mail" /> <span>{auth.role === 'admin' ? 'Admin inbox' : 'Inbox'}</span></button>
+            </>
+          )}
           <div className="sidebar-label category-label">COLLECT BY TYPE</div>
           {vocabularyCategories.map((category) => (
             <button
@@ -2685,6 +2708,21 @@ function App() {
           <span>{sidebarIsOpen ? 'Close menu' : 'Open menu'}</span>
         </button>
         <div className="sidebar-bottom">
+          {authReady && !auth && (
+            <button type="button" className="sidebar-auth-button" onClick={() => setAuthDialogOpen(true)}>
+              <Icon name="shield" /> <span>Sign in / Create account</span>
+            </button>
+          )}
+          {auth && (
+            <button type="button" className="sidebar-auth-button" onClick={async () => {
+              try { await authApi.logout() } finally {
+                setAuth(null)
+                if (section === 'inbox') setSection('home')
+              }
+            }}>
+              <Icon name="logout" /> <span>Sign out ({auth.displayName || auth.username})</span>
+            </button>
+          )}
           <div className="daily-card">
             <span className="daily-sparkle">✦</span>
             <p className="daily-label">A LITTLE REMINDER</p>
@@ -2710,7 +2748,9 @@ function App() {
         <div className="page-content">
           {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => { setError(''); setLoading(true); loadEntries() }}>Try again</button></div>}
           {notice && <div className="success-banner" role="status"><Icon name="check" size={17} /> {notice}</div>}
-          {section === 'grammar' ? (
+          {section === 'inbox' && auth ? (
+            <InboxPage auth={auth} onAuthChange={setAuth} />
+          ) : section === 'grammar' ? (
             <GrammarGuide
               progress={grammarProgress}
               onComplete={recordGrammarAttempt}
@@ -3082,6 +3122,16 @@ function App() {
           </div>
         </div>
       )}
+
+      <AuthDialog
+        open={authDialogOpen}
+        onClose={() => setAuthDialogOpen(false)}
+        onSuccess={(user) => {
+          setAuth(user)
+          setAuthDialogOpen(false)
+          setSection('inbox')
+        }}
+      />
     </div>
   )
 }
